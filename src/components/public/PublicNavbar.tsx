@@ -1,6 +1,8 @@
 import { ArrowRight, Fuel, Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
+import logo from '../../assets/screenshots/logo.png'
+
 
 const links = [
   { to: '/', label: 'Home', end: true },
@@ -10,12 +12,12 @@ const links = [
 function Logo() {
   return (
     <Link to="/" className="group flex items-center gap-3" aria-label="RMA Weekly Monitoring Portal - Home">
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-pub-yellow text-pub-forest shadow-lg shadow-pub-yellow/20 transition group-hover:rotate-6 group-hover:scale-105">
-        <Fuel className="h-5 w-5" aria-hidden />
-      </span>
-      <span className="leading-tight">
-        <span className="block font-display text-sm font-bold tracking-tight text-white">RMA Weekly</span>
-        <span className="block text-xs text-white/60">Monitoring Portal</span>
+      <span className="flex w10 items-center justify-center transition group-hover:rotate-6 group-hover:scale-105">
+        <img
+          src={logo}
+          alt='Logo'
+          className='w-16'
+        />
       </span>
     </Link>
   );

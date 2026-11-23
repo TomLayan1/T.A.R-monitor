@@ -1,6 +1,7 @@
 import { BellRing, ClipboardCheck, Fuel, ShieldAlert, TrendingUp } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import logo from '../../assets/screenshots/logo.png'
 
 const d = (ms: number) => ({ '--d': `${ms}ms` }) as CSSProperties;
 
@@ -30,14 +31,12 @@ function BrandPanel() {
         <div className="auth-ring-rev absolute -right-24 top-[32%] h-[24rem] w-[24rem] rounded-full border border-dashed border-white/15" />
       </div>
 
-      <Link to="/" className="relative z-10 flex items-center gap-3" aria-label="Back to website">
-        <span className="rounded-xl bg-white/15 p-2.5 backdrop-blur">
-          <Fuel className="h-7 w-7" aria-hidden />
-        </span>
-        <span className="leading-tight">
-          <span className="block text-lg font-semibold">RMA Weekly</span>
-          <span className="block text-sm text-white/70">Monitoring Portal</span>
-        </span>
+      <Link to="/" className="bg-white w-16 relative z-10 flex items-center gap-3 p-1 rounded-md" aria-label="Back to website">
+        <img 
+          src={logo}
+          alt='logo'
+          className='w-16'
+        />
       </Link>
 
       <div className="relative z-10">
@@ -61,7 +60,7 @@ function BrandPanel() {
         <ul className="auth-rise mt-8 space-y-3 text-sm text-white/80" style={d(450)}>
           {[
             [ClipboardCheck, 'Structured weekly reports and approvals'],
-            [BellRing, 'Instant alerts on positive T.A.R/Debt'],
+            [BellRing, 'Instant alerts on Debt'],
           ].map(([Icon, text]) => {
             const I = Icon as typeof ClipboardCheck;
             return (
@@ -73,7 +72,7 @@ function BrandPanel() {
         </ul>
       </div>
 
-      <p className="relative z-10 text-sm text-white/60">Frontend MVP, demo data only</p>
+      {/* <p className="relative z-10 text-sm text-white/60">Frontend MVP, demo data only</p> */}
     </div>
   );
 }
