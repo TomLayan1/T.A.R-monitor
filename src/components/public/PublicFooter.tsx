@@ -63,8 +63,8 @@ export function PublicFooter() {
           </nav>
         ))}
       </div>
-      <div className="border-t border-white/10">
-        <p className="mx-auto max-w-7xl px-4 py-5 text-xs text-white/50 sm:px-6 lg:px-8">Frontend MVP with demo data. Not production-grade.</p>
+      <div className="border-t border-white/10 py-5">
+        {/* <p className="mx-auto max-w-7xl px-4 py-5 text-xs text-white/50 sm:px-6 lg:px-8">Frontend MVP with demo data. Not production-grade.</p> */}
       </div>
     </footer>
   );
