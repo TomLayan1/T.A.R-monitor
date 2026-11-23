@@ -1,0 +1,162 @@
+[
+  {
+    "id": "rma-001",
+    "firstName": "Adaeze",
+    "surname": "Okafor",
+    "email": "rma@demo.com",
+    "role": "RMA",
+    "bmId": "bm-001",
+    "regions": [
+      "Lagos Island",
+      "Lekki-Ajah",
+      "Lagos Mainland",
+      "Ikeja-Ikorodu",
+      "Festac-Badagry"
+    ],
+    "password": "Demo@1234"
+  },
+  {
+    "id": "rma-002",
+    "firstName": "Tunde",
+    "surname": "Bakare",
+    "email": "tunde.bakare@demo.com",
+    "role": "RMA",
+    "bmId": "bm-002",
+    "regions": [
+      "Lagos Mainland"
+    ],
+    "password": "Demo@1234"
+  },
+  {
+    "id": "rma-003",
+    "firstName": "Kelechi",
+    "surname": "Nwankwo",
+    "email": "kelechi.nwankwo@demo.com",
+    "role": "RMA",
+    "bmId": "bm-003",
+    "regions": [
+      "Lagos Mainland",
+      "Ikeja-Ikorodu"
+    ],
+    "password": "Demo@1234"
+  },
+  {
+    "id": "rma-004",
+    "firstName": "Hauwa",
+    "surname": "Garba",
+    "email": "hauwa.garba@demo.com",
+    "role": "RMA",
+    "bmId": "bm-004",
+    "regions": [
+      "Lagos Island",
+      "Festac-Badagry"
+    ],
+    "password": "Demo@1234"
+  },
+  {
+    "id": "rma-005",
+    "firstName": "Segun",
+    "surname": "Alabi",
+    "email": "segun.alabi@demo.com",
+    "role": "RMA",
+    "bmId": "bm-001",
+    "regions": [
+      "Lekki-Ajah",
+      "Lagos Island"
+    ],
+    "password": "Demo@1234"
+  },
+  {
+    "id": "rma-006",
+    "firstName": "Ifeoma",
+    "surname": "Obi",
+    "email": "ifeoma.obi@demo.com",
+    "role": "RMA",
+    "bmId": "bm-002",
+    "regions": [
+      "Lekki-Ajah",
+      "Ikeja-Ikorodu"
+    ],
+    "password": "Demo@1234"
+  },
+  {
+    "id": "bm-001",
+    "firstName": "Olumide",
+    "surname": "Adeyemi",
+    "email": "olumide.adeyemi@demo.com",
+    "role": "BM",
+    "bmId": null,
+    "regions": [],
+    "password": "Demo@1234"
+  },
+  {
+    "id": "bm-002",
+    "firstName": "Ngozi",
+    "surname": "Nwosu",
+    "email": "ngozi.nwosu@demo.com",
+    "role": "BM",
+    "bmId": null,
+    "regions": [],
+    "password": "Demo@1234"
+  },
+  {
+    "id": "bm-003",
+    "firstName": "Emeka",
+    "surname": "Obi",
+    "email": "emeka.obi@demo.com",
+    "role": "BM",
+    "bmId": null,
+    "regions": [],
+    "password": "Demo@1234"
+  },
+  {
+    "id": "bm-004",
+    "firstName": "Fatima",
+    "surname": "Bello",
+    "email": "fatima.bello@demo.com",
+    "role": "BM",
+    "bmId": null,
+    "regions": [],
+    "password": "Demo@1234"
+  },
+  {
+    "id": "mgt-001",
+    "firstName": "Ibrahim",
+    "surname": "Musa",
+    "email": "management@demo.com",
+    "role": "Management",
+    "bmId": null,
+    "regions": [],
+    "password": "Demo@1234"
+  },
+  {
+    "id": "mgt-002",
+    "firstName": "Chioma",
+    "surname": "Eze",
+    "email": "chioma.eze@demo.com",
+    "role": "Management",
+    "bmId": null,
+    "regions": [],
+    "password": "Demo@1234"
+  },
+  {
+    "id": "hor-001",
+    "firstName": "Folake",
+    "surname": "Adebayo",
+    "email": "headofretail@demo.com",
+    "role": "Head of Retail",
+    "bmId": null,
+    "regions": [],
+    "password": "Demo@1234"
+  },
+  {
+    "id": "risk-001",
+    "firstName": "Yusuf",
+    "surname": "Danjuma",
+    "email": "risk@demo.com",
+    "role": "Risk",
+    "bmId": null,
+    "regions": [],
+    "password": "Demo@1234"
+  }
+]

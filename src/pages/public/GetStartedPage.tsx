@@ -1,0 +1,86 @@
+import { ArrowRight, Building2, ShieldCheck, UserCog, type LucideIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Reveal } from '../../components/public/Reveal';
+import { delayVar } from '../../components/public/Reveal';
+
+interface Option {
+  icon: LucideIcon;
+  title: string;
+  text: string;
+  cta: string;
+  to: string;
+  iconClass: string;
+  buttonClass: string;
+}
+
+const options: Option[] = [
+  {
+    icon: UserCog,
+    title: 'Get Started as an RMA',
+    text: 'For Retail Monitoring Agents responsible for monitoring assigned stations and submitting weekly reports.',
+    cta: 'Continue as RMA',
+    to: '/rma',
+    iconClass: 'bg-pub-yellow text-pub-forest',
+    buttonClass: 'bg-pub-yellow text-pub-forest hover:shadow-pub-yellow/40',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Get Started as a Stakeholder',
+    text: 'For management personnel who need to monitor station performance, review reports, track financial exposure, and oversee operational activities.',
+    cta: 'Continue as Stakeholder',
+    to: '/management',
+    iconClass: 'bg-pub-lime text-pub-forest',
+    buttonClass: 'bg-pub-lime text-pub-forest hover:shadow-pub-lime/40',
+  },
+  {
+    icon: Building2,
+    title: 'Onboard a Station',
+    text: 'Register a station on the platform to enable structured monitoring, reporting, and management oversight.',
+    cta: 'Onboard a Station',
+    to: '/onboarding/station',
+    iconClass: 'bg-white text-pub-forest',
+    buttonClass: 'bg-white text-pub-forest hover:shadow-white/30',
+  },
+];
+
+export function GetStartedPage() {
+  return (
+    <section className="relative isolate overflow-hidden bg-pub-forest">
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="pub-grid absolute inset-0" />
+        <div className="pub-drift absolute -left-24 top-10 h-96 w-96 rounded-full bg-pub-lime/35 blur-[110px]" />
+        <div className="pub-drift absolute -right-24 bottom-0 h-96 w-96 rounded-full bg-pub-yellow/25 blur-[120px]" style={delayVar(4000)} />
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <h1 className="pub-rise text-4xl font-extrabold tracking-tight text-white sm:text-5xl">How would you like to get started?</h1>
+          <p className="pub-rise mt-4 text-lg text-white/70" style={delayVar(120)}>
+            Choose the option that matches your role.
+          </p>
+        </div>
+
+        <div className="mt-14 grid gap-6 lg:grid-cols-3">
+          {options.map((o, i) => (
+            <Reveal key={o.title} delay={i * 120} className="h-full">
+              <article className="pub-glass flex h-full flex-col p-8">
+                <span className={`relative flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg ${o.iconClass}`}>
+                  <o.icon className="h-7 w-7" aria-hidden />
+                </span>
+                <h2 className="relative mt-7 text-2xl font-bold text-white">{o.title}</h2>
+                <p className="relative mt-3 flex-1 leading-relaxed text-white/80">{o.text}</p>
+                <Link
+                  to={o.to}
+                  className={`group relative mt-8 inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-bold shadow-lg transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${o.buttonClass}`}
+                >
+                  {o.cta}
+                  <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" aria-hidden />
+                </Link>
+              </article>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
