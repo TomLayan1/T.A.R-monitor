@@ -5,8 +5,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { useStations } from '../../hooks/useStations';
 import { useWeeklyLogs } from '../../hooks/useWeeklyLogs';
 import { fullName } from '../../types/user';
-import type { WeeklyLog } from '../../types/weekly-log';
-import { stationCodeLabel, type Station } from '../../types/station';
 import { calculateAvailableCredit, calculateTarDebt } from '../../utils/calculations';
 import { parseAmount } from '../../utils/currency';
 import { getNow } from '../../services/clock.service';
@@ -14,16 +12,14 @@ import { currentWeekEnding } from '../../utils/date';
 import { buttonClasses } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { WeeklyLogForm, type Preview } from './WeeklyLogForm';
-import { WeeklyLogHistory } from './WeeklyLogHistory';
 import { WeeklyLogSummary } from './WeeklyLogSummary';
-import { WeeklyLogTable, type LogRowData } from './WeeklyLogTable';
 
 export function WeeklyLogPage() {
   const { stationId = '' } = useParams<{ stationId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { getStation, loading: stationsLoading } = useStations();
-  const { logsForStation, findSubmission, amendmentFor, rmaName, bmName, loading: logsLoading } = useWeeklyLogs();
+  const { findSubmission, amendmentFor, rmaName, bmName, loading: logsLoading } = useWeeklyLogs();
 
   const [reportingWeek, setReportingWeek] = useState<string>(() => currentWeekEnding(getNow()));
   const [exposure, setExposure] = useState('');
@@ -73,48 +69,6 @@ export function WeeklyLogPage() {
   const myName = fullName(user);
   const myBm = bmName(station.bmId ?? user.bmId); // the station's BM, else the RMA's BM
 
-  const fromLog = (st: Station, log: WeeklyLog, label: string): LogRowData => ({
-    key: log.id,
-    reportingWeek: log.reportingWeek,
-    badge: { label, tone: 'green' },
-    stationCode: stationCodeLabel(st),
-    stationName: st.stationName,
-    creditLimit: st.creditLimit,
-    availableCredit: log.availableCredit,
-    totalExposure: log.totalExposure,
-    availableStock: log.availableStock,
-    tarDebt: log.tarDebt,
-    rma: rmaName(log.rmaId),
-    bm: bmName(log.bmId),
-  });
-
-  const currentRow: LogRowData = existing
-    ? fromLog(station, existing, existing.version > 1 ? `Amended v${existing.version} - read-only` : 'Submitted - read-only')
-    : {
-        key: 'draft',
-        reportingWeek,
-        badge: { label: 'Draft - not submitted', tone: 'amber' },
-        stationCode: stationCodeLabel(station),
-        stationName: station.stationName,
-        creditLimit: station.creditLimit,
-        availableCredit: preview.availableCredit,
-        totalExposure: (() => {
-          const p = parseAmount(exposure);
-          return p.kind === 'ok' ? p.value : null;
-        })(),
-        availableStock: (() => {
-          const p = parseAmount(stock);
-          return p.kind === 'ok' ? p.value : null;
-        })(),
-        tarDebt: preview.tarDebt,
-        rma: myName,
-        bm: myBm,
-      };
-
-  const history = logsForStation(station.id)
-    .filter((l) => l.id !== existing?.id)
-    .map((l) => fromLog(station, l, l.version > 1 ? `Amended (v${l.version})` : 'Submitted'));
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -158,7 +112,7 @@ export function WeeklyLogPage() {
         }}
       />
 
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      {/* <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
           <h3 className="text-base font-semibold text-slate-900">Current entry</h3>
           <p className="text-xs text-slate-500">Updates live as you type.</p>
@@ -166,7 +120,7 @@ export function WeeklyLogPage() {
         <WeeklyLogTable rows={[currentRow]} />
       </section>
 
-      <WeeklyLogHistory rows={history} />
+      <WeeklyLogHistory rows={history} /> */}
     </div>
   );
 }

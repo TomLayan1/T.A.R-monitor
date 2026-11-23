@@ -161,7 +161,7 @@ export function WeeklyLogForm(props: Props) {
         <Input label="Credit Limit" value={formatNairaOrNA(station.creditLimit)} readOnly hint={station.creditLimit === null ? 'Pending: supplied by S4HANA. Available Credit cannot be calculated yet.' : undefined} />
 
         <Input
-          label="Total Exposure"
+          label="R.M.A Balance"
           required
           inputMode="decimal"
           adornment="₦"

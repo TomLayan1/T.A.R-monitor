@@ -7,7 +7,7 @@ export function WeeklyLogSummary({ station }: { station: Station }) {
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">{station.stationName}</h2>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">{station.stationName}</h2>
           <p className="text-sm text-slate-500">Station code: {stationCodeLabel(station)}</p>
         </div>
         <div className="text-left sm:text-right">
