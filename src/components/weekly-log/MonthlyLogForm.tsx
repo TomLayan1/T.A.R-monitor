@@ -5,7 +5,6 @@ import { useMonthlyLogs } from '../../hooks/useMonthlyLogs';
 import { useSharedData } from '../../hooks/useSharedData';
 import { latestMonthlyLog, monthValidationError } from '../../services/monthly-log.service';
 import type { Station } from '../../types/station';
-import { calculateFinancialMonitor } from '../../utils/calculations';
 import { formatNaira, parseAmount } from '../../utils/currency';
 import { formatMonth, recentMonths } from '../../utils/date';
 import { Button } from '../ui/Button';

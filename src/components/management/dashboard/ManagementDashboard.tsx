@@ -1,4 +1,4 @@
-import { AlertTriangle, Building2, CheckCircle2, ClipboardX, Fuel, Gauge, Landmark, Percent, Users, Wallet, WalletCards } from 'lucide-react';
+import { Building2, CheckCircle2, ClipboardX, Fuel, Gauge, Landmark, Users, Wallet, WalletCards } from 'lucide-react';
 import { useMemo } from 'react';
 import { useScopedData } from '../../../hooks/useScopedData';
 import { useSubmissionStatus } from '../../../hooks/useSubmissionStatus';
@@ -28,7 +28,7 @@ export function ManagementDashboard() {
   const submissions = useMemo(() => stationSubmissionsForWeek(stations, currentReports, week, now), [stations, currentReports, week, now]);
   const completed = submissions.filter((s) => s.state === 'Submitted').length;
   const outstanding = submissions.length - completed;
-  const performance = submissions.length > 0 ? (completed / submissions.length) * 100 : 0;
+  // const performance = submissions.length > 0 ? (completed / submissions.length) * 100 : 0;
   const outstandingLink = `/management/outstanding-stations?week=${week}`;
   const isBm = user?.role === 'BM';
 
