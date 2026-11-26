@@ -85,7 +85,7 @@ export function WeeklyLogsPage() {
       <div>
         <h2 className="text-lg font-semibold text-slate-900">Submitted weekly logs</h2>
         <p className="text-sm text-slate-500">
-          All logs submitted for your assigned stations. Submitted logs are read-only; use Edit to ask Risk for a correction.
+          All logs submitted for your assigned stations.
         </p>
       </div>
 
@@ -149,7 +149,7 @@ export function WeeklyLogsPage() {
               {detail('Available credit (Trade Balance - Credit Limit)', formatNairaOrNA(selected.log.availableCredit))}
               {detail('Trade balance', formatNaira(selected.log.tradeBalance))}
               {detail('Available stock', formatNaira(selected.log.availableStock))}
-              {detail('Cash in Till (CIT)', selected.log.legacy ? `${formatNaira(selected.log.cit)} (not recorded before CIT was introduced)` : formatNaira(selected.log.cit))}
+              {detail('Cash in Till (CIT)', selected.log.legacy ? `${formatNaira(selected.log.cit)}` : formatNaira(selected.log.cit))}
               {detail('Total stock (Available Stock + CIT)', formatNaira(selected.log.totalStock))}
               {detail('TAR (Available Stock - Trade Balance)', <TarValue value={selected.log.tar} />)}
               {detail('Exposure (TAR - Available Stock + CIT)', <TarValue value={selected.log.exposure} />)}

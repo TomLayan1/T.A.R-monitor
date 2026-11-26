@@ -9,7 +9,7 @@ import { formatNaira } from '../../utils/currency';
 import { formatMonth } from '../../utils/date';
 import { netEffectLevel, type NetEffectLevel } from '../../utils/net-effect';
 import { hasOrgWideAccess } from '../../utils/permissions';
-import { Badge } from '../ui/Badge';
+// import { Badge } from '../ui/Badge';
 import { Button, buttonClasses } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { FilterBar } from '../ui/FilterBar';
@@ -74,12 +74,12 @@ export function FinancialMonitorPage() {
   const pageRows = visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const logged = rows.filter((r) => r.figures !== null).map((r) => r.figures!);
-  const counts = {
-    positive: logged.filter((f) => f.netEffect > 0).length,
-    negative: logged.filter((f) => f.netEffect < 0).length,
-    zero: logged.filter((f) => f.netEffect === 0).length,
-    missing: rows.length - logged.length,
-  };
+  // const counts = {
+  //   positive: logged.filter((f) => f.netEffect > 0).length,
+  //   negative: logged.filter((f) => f.netEffect < 0).length,
+  //   zero: logged.filter((f) => f.netEffect === 0).length,
+  //   missing: rows.length - logged.length,
+  // };
   const scopeText = user && hasOrgWideAccess(user.role) ? 'every station' : user?.role === 'BM' ? 'your assigned stations' : 'your assigned stations';
 
   const handleExport = async () => {
@@ -105,25 +105,22 @@ export function FinancialMonitorPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900">Financial Monitor</h2>
-          <p className="text-sm text-slate-500">
-            Monthly account monitoring for {scopeText}, calculated from the monthly logs. {month === 'latest' ? "Showing each station's latest monthly log." : `Showing ${formatMonth(month)}.`}
-          </p>
-        </div>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <p className="text-sm text-slate-500">
+          Monthly account monitoring for {scopeText}, calculated from the monthly logs.
+        </p>
         <Button onClick={handleExport} loading={busy} disabled={logged.length === 0} icon={<Download className="h-4 w-4" />}>
           Download Excel
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
+      {/* <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="text-slate-500">Net Effect:</span>
         <Badge tone="rose">{counts.positive} positive</Badge>
         <Badge tone="green">{counts.negative} negative</Badge>
         <Badge tone="slate">{counts.zero} zero</Badge>
         {counts.missing > 0 && <Badge tone="amber">{counts.missing} without a monthly log</Badge>}
-      </div>
+      </div> */}
 
       <FilterBar>
         <SearchInput value={query} onChange={setQuery} placeholder="Search by station code or name" ariaLabel="Search Financial Monitor" className="w-full sm:min-w-[16rem] sm:flex-1" />
@@ -199,10 +196,6 @@ export function FinancialMonitorPage() {
         )}
         {monthlyLogs.length > 0 && visible.length > 0 && <Pagination page={page} pageSize={PAGE_SIZE} total={visible.length} onPageChange={setPage} />}
       </div>
-
-      <p className="text-xs text-slate-500">
-        Total Opening Stock = Opening Stock + Opening Balance. Total Closing Stock = Closing Stock + Closing Balance. Change in Balance = Closing Balance − Opening Balance. Change in Stock = Total Closing Stock − Total Opening Stock. Net Effect = Change in Stock − Change in Balance (red: positive, green: negative, grey: zero).
-      </p>
     </div>
   );
 }

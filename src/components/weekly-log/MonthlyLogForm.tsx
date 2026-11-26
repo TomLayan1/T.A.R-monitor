@@ -1,4 +1,4 @@
-import { CalendarRange, Info, Lock, Send } from 'lucide-react';
+import { Info, Lock, Send } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useMonthlyLogs } from '../../hooks/useMonthlyLogs';
@@ -7,11 +7,8 @@ import { latestMonthlyLog, monthValidationError } from '../../services/monthly-l
 import type { Station } from '../../types/station';
 import { calculateFinancialMonitor } from '../../utils/calculations';
 import { formatNaira, parseAmount } from '../../utils/currency';
-import { formatDateTime, formatMonth, recentMonths } from '../../utils/date';
-import { NetEffectValue } from '../shared/NetEffectValue';
-import { Badge } from '../ui/Badge';
+import { formatMonth, recentMonths } from '../../utils/date';
 import { Button } from '../ui/Button';
-import { EmptyState } from '../ui/EmptyState';
 import { Input, Select } from '../ui/Input';
 import { useToast } from '../ui/Toast';
 
@@ -23,7 +20,7 @@ function validateAmount(raw: string, label: string): string | undefined {
   return undefined;
 }
 
-const th = 'whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500';
+// const th = 'whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500';
 
 /**
  * Account Monitoring monthly log. The RMA enters only the closing values; the opening values are carried forward
@@ -32,11 +29,11 @@ const th = 'whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking
 export function MonthlyLogForm({ station }: { station: Station }) {
   const { user } = useAuth();
   const { now } = useSharedData();
-  const { monthlyLogs, logsForStation, openingFor, submit } = useMonthlyLogs();
+  const { monthlyLogs, openingFor, submit } = useMonthlyLogs();
   const { notify } = useToast();
   const isRma = user?.role === 'RMA';
 
-  const history = logsForStation(station.id);
+  // const history = logsForStation(station.id);
   const latest = latestMonthlyLog(monthlyLogs, station.id);
 
   // Months that can still be logged: not in the future, not already logged, and after the latest existing log.
@@ -62,10 +59,10 @@ export function MonthlyLogForm({ station }: { station: Station }) {
   };
   const cs = parseAmount(closingStock);
   const cb = parseAmount(closingBalance);
-  const preview =
-    opening && cs.kind === 'ok' && cb.kind === 'ok'
-      ? calculateFinancialMonitor({ openingStock: opening.openingStock, openingBalanceCit: opening.openingBalanceCit, closingStock: cs.value, closingBalanceCit: cb.value })
-      : null;
+  // const preview =
+  //   opening && cs.kind === 'ok' && cb.kind === 'ok'
+  //     ? calculateFinancialMonitor({ openingStock: opening.openingStock, openingBalanceCit: opening.openingBalanceCit, closingStock: cs.value, closingBalanceCit: cb.value })
+  //     : null;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

@@ -1,4 +1,4 @@
-import { AlertTriangle, Banknote, Building2, CheckCircle2, ClipboardX, Fuel, Gauge, Landmark, Percent, Users, Wallet, WalletCards } from 'lucide-react';
+import { AlertTriangle, Building2, CheckCircle2, ClipboardX, Fuel, Gauge, Landmark, Percent, Users, Wallet, WalletCards } from 'lucide-react';
 import { useMemo } from 'react';
 import { useScopedData } from '../../../hooks/useScopedData';
 import { useSubmissionStatus } from '../../../hooks/useSubmissionStatus';
@@ -39,27 +39,27 @@ export function ManagementDashboard() {
       </p>
 
       {isBm ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <SummaryCard label="Total Assigned Stations" value={String(summary.stationCount)} icon={Building2} />
           <SummaryCard label="Total Assigned RMAs" value={String(rmas.length)} icon={Users} />
-          <SummaryCard label="Positive TAR Stations" value={String(summary.positiveTarStations)} icon={AlertTriangle} hint="Latest report, TAR above ₦0" />
-          <SummaryCard label="Outstanding Reports" value={String(outstanding)} icon={ClipboardX} hint="Current reporting week" to={outstandingLink} />
-          <SummaryCard label="Completed Reports" value={String(completed)} icon={CheckCircle2} hint="Current reporting week" />
-          <SummaryCard label="Submission Performance" value={`${performance.toFixed(1)}%`} icon={Percent} hint="Completed / expected" />
-          <SummaryCard label="Total Trade Balance" value={formatNaira(summary.totalTradeBalance)} icon={Landmark} hint="Latest weekly logs" />
+          {/* <SummaryCard label="Positive TAR Stations" value={String(summary.positiveTarStations)} icon={AlertTriangle} hint="" /> */}
+          <SummaryCard label="Outstanding Reports" value={String(outstanding)} icon={ClipboardX} hint="" to={outstandingLink} />
+          <SummaryCard label="Completed Reports" value={String(completed)} icon={CheckCircle2} hint="" />
+          {/* <SummaryCard label="Submission Performance" value={`${performance.toFixed(1)}%`} icon={Percent} hint="" /> */}
+          {/* <SummaryCard label="Total Trade Balance" value={formatNaira(summary.totalTradeBalance)} icon={Landmark} hint="" /> */}
           <SummaryCard label="Available Stock" value={formatNaira(summary.totalAvailableStock)} icon={Fuel} />
-          <SummaryCard label="Exposure" value={formatNaira(summary.totalExposure)} icon={Gauge} hint="TAR - Available Stock + CIT" />
+          <SummaryCard label="Exposure" value={formatNaira(summary.totalExposure)} icon={Gauge} hint="" />
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <SummaryCard label="Total Number of Stations" value={String(summary.stationCount)} icon={Building2} />
           <SummaryCard label="Total Credit Limit" value={formatNaira(summary.totalCredit)} icon={Wallet} />
-          <SummaryCard label="Total Available Credit" value={formatNaira(summary.totalAvailableCredit)} icon={WalletCards} hint="Trade Balance - Credit Limit" />
-          <SummaryCard label="Total Trade Balance" value={formatNaira(summary.totalTradeBalance)} icon={Landmark} hint="Latest weekly logs" />
+          <SummaryCard label="Total Available Credit" value={formatNaira(summary.totalAvailableCredit)} icon={WalletCards} hint="" />
+          <SummaryCard label="Total Trade Balance" value={formatNaira(summary.totalTradeBalance)} icon={Landmark} hint="" />
           <SummaryCard label="Total Available Stock" value={formatNaira(summary.totalAvailableStock)} icon={Fuel} />
-          <SummaryCard label="Total CIT" value={formatNaira(summary.totalCit)} icon={Banknote} hint="Cash in Till" />
-          <SummaryCard label="Total TAR" value={formatNaira(summary.totalTar)} icon={AlertTriangle} hint="Available Stock - Trade Balance" />
-          <SummaryCard label="Exposure" value={formatNaira(summary.totalExposure)} icon={Gauge} hint="TAR - Available Stock + CIT" />
+          {/* <SummaryCard label="Total CIT" value={formatNaira(summary.totalCit)} icon={Banknote} hint="Cash in Till" /> */}
+          {/* <SummaryCard label="Total TAR" value={formatNaira(summary.totalTar)} icon={AlertTriangle} hint="Available Stock - Trade Balance" /> */}
+          <SummaryCard label="Exposure" value={formatNaira(summary.totalExposure)} icon={Gauge} hint="" />
           {/* <SummaryCard label="Outstanding Stations" value={String(outstanding)} icon={ClipboardX} hint="Click for details" to={outstandingLink} /> */}
         </div>
       )}
