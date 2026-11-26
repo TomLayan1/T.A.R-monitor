@@ -14,19 +14,26 @@ import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Input';
 import { useToast } from '../ui/Toast';
 
+/** Live figures shown on the form. Credit Limit comes from S4HANA; calculated figures appear once their RMA inputs are valid. */
 export interface Preview {
+  creditLimit: number | null;
+  tradeBalance: number | null;
   availableCredit: number | null;
-  tarDebt: number | null;
+  totalStock: number | null;
+  tar: number | null;
+  exposure: number | null;
 }
 
 interface Props {
   station: Station;
   reportingWeek: string;
   onWeekChange: (week: string) => void;
-  exposure: string;
+  tradeBalance: string;
   stock: string;
-  onExposureChange: (v: string) => void;
+  cit: string;
+  onTradeBalanceChange: (v: string) => void;
   onStockChange: (v: string) => void;
+  onCitChange: (v: string) => void;
   comments: string;
   onCommentsChange: (v: string) => void;
   preview: Preview;
@@ -49,7 +56,7 @@ function validateAmount(raw: string, label: string): string | undefined {
 const show = (value: number | null) => (value === null ? '' : formatNaira(value));
 
 export function WeeklyLogForm(props: Props) {
-  const { station, reportingWeek, exposure, stock, preview, existing, rmaName, bmName } = props;
+  const { station, reportingWeek, tradeBalance, stock, cit, preview, existing, rmaName, bmName } = props;
   const { user } = useAuth();
   const { submitLog } = useWeeklyLogs();
   const { now } = useSharedData();
@@ -67,26 +74,29 @@ export function WeeklyLogForm(props: Props) {
   const isLate = !existing && now.getTime() > deadlineFor(reportingWeek).getTime();
 
   const errors = {
-    exposure: validateAmount(exposure, 'Total Exposure'),
+    tradeBalance: validateAmount(tradeBalance, 'Trade Balance'),
     stock: validateAmount(stock, 'Available Stock'),
+    cit: validateAmount(cit, 'Cash in Till (CIT)'),
   };
-  const parsedExposure = parseAmount(exposure);
+  const parsedTradeBalance = parseAmount(tradeBalance);
   const parsedStock = parseAmount(stock);
+  const parsedCit = parseAmount(cit);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user || locked) return;
     setShowErrors(true);
-    if (errors.exposure || errors.stock) return;
-    if (parsedExposure.kind !== 'ok' || parsedStock.kind !== 'ok') return;
+    if (errors.tradeBalance || errors.stock || errors.cit) return;
+    if (parsedTradeBalance.kind !== 'ok' || parsedStock.kind !== 'ok' || parsedCit.kind !== 'ok') return;
 
     setSubmitting(true);
     try {
       await submitLog({
         stationId: station.id,
         reportingWeek,
-        totalExposure: parsedExposure.value,
+        tradeBalance: parsedTradeBalance.value,
         availableStock: parsedStock.value,
+        cit: parsedCit.value,
         comments: props.comments,
       });
       notify('success', `Weekly log submitted for ${station.stationName} (${formatWeek(reportingWeek)}).`);
@@ -116,18 +126,18 @@ export function WeeklyLogForm(props: Props) {
         <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
           <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <p>
-            The Head of Retail approved your edit request for this report.{' '}
+            Risk approved your edit request for this report.{' '}
             <Link to={`/rma/weekly-logs?q=${encodeURIComponent(stationRef(station))}`} className="font-semibold underline">
               Open Weekly Logs
             </Link>{' '}
-            to update Total Exposure and Available Stock.
+            to update Trade Balance, Available Stock and Cash in Till (CIT).
           </p>
         </div>
       )}
       {existing && props.amendment?.status === 'Pending Approval' && (
         <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
           <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          <p>An edit request for this report is awaiting Head of Retail approval. The report stays locked until then.</p>
+          <p>An edit request for this report is awaiting Risk approval. The report stays locked until then.</p>
         </div>
       )}
       {isLate && isRma && (
@@ -158,20 +168,21 @@ export function WeeklyLogForm(props: Props) {
         </Select>
         <Input label="Station Code" value={stationCodeLabel(station)} readOnly hint={station.stationCode === null ? 'Pending: supplied by S4HANA' : undefined} />
         <Input label="Station Name" value={station.stationName} readOnly />
-        <Input label="Credit Limit" value={formatNairaOrNA(station.creditLimit)} readOnly hint={station.creditLimit === null ? 'Pending: supplied by S4HANA. Available Credit cannot be calculated yet.' : undefined} />
-
+        <Input label="Credit Limit" value={formatNairaOrNA(preview.creditLimit)} readOnly hint={preview.creditLimit === null ? 'Pending: supplied by S4HANA. Available Credit cannot be calculated yet.' : 'S4HANA (simulated)'} />
+        <Input label="Available Credit" value={show(preview.availableCredit)} placeholder={preview.creditLimit === null ? 'Not available' : 'Calculated'} readOnly hint="Trade Balance - Credit Limit" />
         <Input
-          label="R.M.A Balance"
+          label="Trade Balance"
           required
           inputMode="decimal"
           adornment="₦"
           placeholder="0"
-          value={existing ? String(existing.totalExposure) : exposure}
+          value={existing ? String(existing.tradeBalance) : tradeBalance}
           disabled={locked}
-          onChange={(e) => props.onExposureChange(e.target.value)}
+          onChange={(e) => props.onTradeBalanceChange(e.target.value)}
           onBlur={() => setShowErrors(true)}
-          error={showErrors && !locked ? errors.exposure : undefined}
+          error={showErrors && !locked ? errors.tradeBalance : undefined}
         />
+
         <Input
           label="Available Stock"
           required
@@ -184,21 +195,36 @@ export function WeeklyLogForm(props: Props) {
           onBlur={() => setShowErrors(true)}
           error={showErrors && !locked ? errors.stock : undefined}
         />
+        <Input
+          label="Cash in Till (CIT)"
+          required
+          inputMode="decimal"
+          adornment="₦"
+          placeholder="0"
+          value={existing ? String(existing.cit) : cit}
+          disabled={locked}
+          onChange={(e) => props.onCitChange(e.target.value)}
+          onBlur={() => setShowErrors(true)}
+          error={showErrors && !locked ? errors.cit : undefined}
+          hint={showErrors && !locked && errors.cit ? undefined : 'Cash physically at the station that has not yet been deposited.'}
+        />
+        <Input label="Total Stock" value={show(preview.totalStock)} placeholder="Calculated" readOnly hint="Available Stock + CIT" />
 
         <Input
-          label="Available Credit"
-          value={show(preview.availableCredit)}
+          label="TAR"
+          value={show(preview.tar)}
+          inputClassName={preview.tar === null ? '' : `font-medium ${tarTextClass(preview.tar)}`}
           placeholder="Calculated"
           readOnly
-          hint="Total Exposure - Credit Limit"
+          hint="Available Stock - Trade Balance"
         />
         <Input
-          label="T.A.R Exposure/Debt"
-          value={show(preview.tarDebt)}
-          inputClassName={preview.tarDebt === null ? '' : `font-medium ${tarTextClass(preview.tarDebt)}`}
+          label="Exposure"
+          value={show(preview.exposure)}
+          inputClassName={preview.exposure === null ? '' : `font-medium ${tarTextClass(preview.exposure)}`}
           placeholder="Calculated"
           readOnly
-          hint="Available Stock - Total Exposure"
+          hint="TAR - Available Stock + CIT"
         />
         <div className="hidden lg:block" />
 

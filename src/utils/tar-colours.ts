@@ -1,5 +1,5 @@
 /**
- * Single source of truth for T.A.R/Debt classification and colour:
+ * Single source of truth for TAR classification and colour:
  *   positive (> 0)  -> Debt / positive T.A.R : red text on a very light red background
  *   negative (< 0)  -> negative T.A.R        : green
  *   exactly zero    -> neutral               : default styling

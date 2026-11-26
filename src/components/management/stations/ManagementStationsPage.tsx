@@ -76,11 +76,11 @@ export function ManagementStationsPage() {
       if (rmaFilter !== 'all' && r.rmaId !== rmaFilter) return false;
       if (bmFilter !== 'all' && r.bm !== bmFilter) return false;
       if (statusFilter === 'none') return r.log === null;
-      if (statusFilter !== 'all') return r.log !== null && tarLevel(r.log.tarDebt) === statusFilter;
+      if (statusFilter !== 'all') return r.log !== null && tarLevel(r.log.tar) === statusFilter;
       return true;
     });
     return sort === 'tar-desc'
-      ? [...list].sort((a, b) => (b.log?.tarDebt ?? -Infinity) - (a.log?.tarDebt ?? -Infinity))
+      ? [...list].sort((a, b) => (b.log?.tar ?? -Infinity) - (a.log?.tar ?? -Infinity))
       : [...list].sort((a, b) => (a.station.stationCode ?? '~').localeCompare(b.station.stationCode ?? '~') || a.station.stationName.localeCompare(b.station.stationName));
   }, [rows, query, rmaFilter, bmFilter, statusFilter, sort]);
 
@@ -123,15 +123,15 @@ export function ManagementStationsPage() {
           ))}
         </FilterSelect>
         <FilterSelect value={statusFilter} onChange={(v) => setStatusFilter(v as StatusFilter)} ariaLabel="Filter by exposure status">
-          <option value="all">All exposure statuses</option>
-          <option value="positive">Positive T.A.R (debt)</option>
-          <option value="negative">Negative T.A.R</option>
-          <option value="zero">Zero T.A.R</option>
+          <option value="all">All TAR statuses</option>
+          <option value="positive">Positive TAR (debt)</option>
+          <option value="negative">Negative TAR</option>
+          <option value="zero">Zero TAR</option>
           <option value="none">No report</option>
         </FilterSelect>
         <FilterSelect value={sort} onChange={(v) => setSort(v as SortMode)} ariaLabel="Sort stations">
           <option value="code">Sort: Station code</option>
-          <option value="tar-desc">Sort: Highest T.A.R/Debt</option>
+          <option value="tar-desc">Sort: Highest TAR</option>
         </FilterSelect>
       </FilterBar>
 
@@ -140,16 +140,19 @@ export function ManagementStationsPage() {
           <EmptyState icon={SearchX} title="No stations match your filters" description="Try clearing a filter or the search." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-[1500px] w-full divide-y divide-slate-200">
+            <table className="min-w-[1950px] w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
                   <th className={`${th} text-left`}>Station Code</th>
                   <th className={`${th} text-left`}>Station Name</th>
                   <th className={`${th} text-right`}>Credit Limit</th>
                   <th className={`${th} text-right`}>Available Credit</th>
-                  <th className={`${th} text-right`}>Total Exposure</th>
+                  <th className={`${th} text-right`}>Trade Balance</th>
                   <th className={`${th} text-right`}>Available Stock</th>
-                  <th className={`${th} text-right`}>T.A.R/Debt</th>
+                  <th className={`${th} text-right`}>CIT</th>
+                  <th className={`${th} text-right`}>Total Stock</th>
+                  <th className={`${th} text-right`}>TAR</th>
+                  <th className={`${th} text-right`}>Exposure</th>
                   <th className={`${th} text-left`}>RMA</th>
                   <th className={`${th} text-left`}>BM</th>
                   <th className={`${th} text-left`}>Status</th>
@@ -161,14 +164,17 @@ export function ManagementStationsPage() {
                   <tr key={station.id} className="hover:bg-slate-50">
                     <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">{stationCodeLabel(station)}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{station.stationName}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNairaOrNA(station.creditLimit)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNairaOrNA(log ? log.creditLimit : station.creditLimit)}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{log ? formatNairaOrNA(log.availableCredit, '—') : '—'}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{log ? formatNaira(log.totalExposure) : '—'}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{log ? formatNaira(log.tradeBalance) : '—'}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{log ? formatNaira(log.availableStock) : '—'}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm">{log ? <TarValue value={log.tarDebt} /> : '—'}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{log ? formatNaira(log.cit) : '—'}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{log ? formatNaira(log.totalStock) : '—'}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm">{log ? <TarValue value={log.tar} /> : '—'}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm">{log ? <TarValue value={log.exposure} /> : '—'}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{rma}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{bm}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm">{log ? <TarStatusBadge value={log.tarDebt} /> : <Badge tone="slate">No report</Badge>}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm">{log ? <TarStatusBadge value={log.tar} /> : <Badge tone="slate">No report</Badge>}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
                       <Button size="sm" variant="secondary" icon={<History className="h-4 w-4" />} onClick={() => setHistoryFor(station)}>
                         History
@@ -190,15 +196,17 @@ export function ManagementStationsPage() {
               <p className="text-sm text-slate-500">No reports have been submitted for this station.</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-[640px] w-full divide-y divide-slate-200 text-sm">
+                <table className="min-w-[820px] w-full divide-y divide-slate-200 text-sm">
                   <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                     <tr>
                       <th className="px-3 py-2 text-left">Week</th>
                       <th className="px-3 py-2 text-left">Version</th>
                       <th className="px-3 py-2 text-left">Submitted</th>
-                      <th className="px-3 py-2 text-right">Exposure</th>
+                      <th className="px-3 py-2 text-right">Trade Balance</th>
                       <th className="px-3 py-2 text-right">Stock</th>
-                      <th className="px-3 py-2 text-right">T.A.R/Debt</th>
+                      <th className="px-3 py-2 text-right">CIT</th>
+                      <th className="px-3 py-2 text-right">TAR</th>
+                      <th className="px-3 py-2 text-right">Exposure</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -216,9 +224,11 @@ export function ManagementStationsPage() {
                           )}
                         </td>
                         <td className="whitespace-nowrap px-3 py-2">{formatDateTime(r.submittedAt)}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-right">{formatNaira(r.totalExposure)}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-right">{formatNaira(r.tradeBalance)}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-right">{formatNaira(r.availableStock)}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-right"><TarValue value={r.tarDebt} /></td>
+                        <td className="whitespace-nowrap px-3 py-2 text-right">{formatNaira(r.cit)}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-right"><TarValue value={r.tar} /></td>
+                        <td className="whitespace-nowrap px-3 py-2 text-right"><TarValue value={r.exposure} /></td>
                       </tr>
                     ))}
                   </tbody>
@@ -233,10 +243,10 @@ export function ManagementStationsPage() {
                     <li key={h.id} className="rounded-lg border border-slate-200 p-3">
                       <p>{formatWeek(h.reportingWeek)}: reason "{h.reason}"</p>
                       <p className="mt-1">
-                        Original: exposure {formatNaira(h.originalTotalExposure)}, stock {formatNaira(h.originalAvailableStock)}, T.A.R <TarValue value={h.originalTarDebt} />
+                        Original: trade balance {formatNaira(h.originalTradeBalance)}, stock {formatNaira(h.originalAvailableStock)}, CIT {formatNaira(h.originalCit)}, TAR <TarValue value={h.originalTar} />, Exposure <TarValue value={h.originalExposure} />
                       </p>
                       <p>
-                        Updated: exposure {formatNaira(h.updatedTotalExposure)}, stock {formatNaira(h.updatedAvailableStock)}, T.A.R <TarValue value={h.updatedTarDebt} />
+                        Updated: trade balance {formatNaira(h.updatedTradeBalance)}, stock {formatNaira(h.updatedAvailableStock)}, CIT {formatNaira(h.updatedCit)}, TAR <TarValue value={h.updatedTar} />, Exposure <TarValue value={h.updatedExposure} />
                       </p>
                       <p className="mt-1 text-xs text-slate-500">Approved {formatDateTime(h.approvalDate)}; resubmitted {formatDateTime(h.resubmissionDate)}</p>
                     </li>

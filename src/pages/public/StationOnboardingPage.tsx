@@ -204,7 +204,7 @@ export function StationOnboardingPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-pub-yellow px-7 py-4 text-base font-bold text-pub-forest shadow-lg shadow-pub-yellow/30 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+                className="inline-flex whitespace-nowrap w-full items-center justify-center gap-2 rounded-full bg-pub-yellow px-7 py-4 text-base font-bold text-pub-forest shadow-lg shadow-pub-yellow/30 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {busy && <Loader2 className="h-5 w-5 animate-spin" aria-hidden />}
                 {busy ? 'Onboarding...' : 'Onboard station'}

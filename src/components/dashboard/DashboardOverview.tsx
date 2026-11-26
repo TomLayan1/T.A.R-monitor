@@ -1,4 +1,4 @@
-import { Building2, Fuel, Loader2, Wallet, WalletCards } from 'lucide-react';
+import { Banknote, Building2, Fuel, Gauge, Loader2, Wallet, WalletCards } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useStations } from '../../hooks/useStations';
@@ -54,16 +54,18 @@ export function DashboardOverview() {
         Figures reflect the latest weekly log submitted for each assigned station.
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <SummaryCard label="Number of Stations" value={String(summary.stationCount)} icon={Building2} hint="Assigned to you" />
         <SummaryCard label="Total Credit" value={formatNaira(summary.totalCredit)} icon={Wallet} hint="Sum of credit limits" />
         <SummaryCard
           label="Total Available Credit"
           value={formatNaira(summary.totalAvailableCredit)}
           icon={WalletCards}
-          hint="Total Exposure - Credit Limit"
+          hint="Trade Balance - Credit Limit"
         />
         <SummaryCard label="Total Available Stock" value={formatNaira(summary.totalAvailableStock)} icon={Fuel} hint="Latest weekly logs" />
+        <SummaryCard label="Total CIT" value={formatNaira(summary.totalCit)} icon={Banknote} hint="Cash in Till, latest weekly logs" />
+        <SummaryCard label="Exposure" value={formatNaira(summary.totalExposure)} icon={Gauge} hint="TAR - Available Stock + CIT" />
       </div>
 
       {logs.length === 0 ? (

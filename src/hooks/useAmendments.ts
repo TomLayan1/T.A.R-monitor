@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { completeAmendment, decideAmendment, requestAmendment } from '../services/amendment.service';
+import type { WeeklyInputs } from '../services/report.service';
 import { useAuth } from './useAuth';
 import { useSharedData } from './useSharedData';
 
@@ -25,9 +26,9 @@ export function useAmendments() {
     [user],
   );
   const complete = useCallback(
-    async (requestId: string, totalExposure: number, availableStock: number) => {
+    async (requestId: string, inputs: WeeklyInputs) => {
       if (!user) throw new Error('You must be signed in.');
-      return completeAmendment(user.id, requestId, totalExposure, availableStock);
+      return completeAmendment(user.id, requestId, inputs);
     },
     [user],
   );

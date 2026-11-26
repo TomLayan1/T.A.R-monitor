@@ -12,6 +12,7 @@ import { OutstandingStationsPage } from '../components/management/stations/Outst
 import { PublicLayout } from '../components/public/PublicLayout';
 import { RmaNotificationsPage } from '../components/rma/notifications/RmaNotificationsPage';
 import { ReportsWorkspace } from '../components/shared/ReportsWorkspace';
+import { FinancialMonitorPage } from '../components/shared/FinancialMonitorPage';
 import { StationsPage } from '../components/stations/StationsPage';
 import { WeeklyLogPage } from '../components/weekly-log/WeeklyLogPage';
 import { WeeklyLogsPage } from '../components/weekly-logs/WeeklyLogsPage';
@@ -19,6 +20,7 @@ import { NotFoundPage } from '../pages/NotFoundPage';
 import { SignInPage } from '../pages/SignInPage';
 import { SignUpPage } from '../pages/SignUpPage';
 import { AboutPage } from '../pages/public/AboutPage';
+import { GetStartedPage } from '../pages/public/GetStartedPage';
 import { HomePage } from '../pages/public/HomePage';
 import { StationOnboardingPage } from '../pages/public/StationOnboardingPage';
 import { GuestRoute, RoleGuard } from './guards';
@@ -32,9 +34,9 @@ export function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/onboarding/station" element={<StationOnboardingPage />} />
+        {/* Get Started: choose Sign In or Onboard a Station */}
+        <Route path="/get-started" element={<GuestRoute><GetStartedPage /></GuestRoute>} />
       </Route>
-      {/* Get Started goes straight to the unified Sign In */}
-      <Route path="/get-started" element={<Navigate to={SIGN_IN_PATH} replace />} />
 
       {/* Unified authentication for every account type */}
       <Route path={SIGN_IN_PATH} element={<GuestRoute><SignInPage /></GuestRoute>} />
@@ -53,6 +55,7 @@ export function AppRoutes() {
         <Route path="/rma/stations" element={<StationsPage />} />
         <Route path="/rma/stations/:stationId/weekly-log" element={<WeeklyLogPage />} />
         <Route path="/rma/weekly-logs" element={<WeeklyLogsPage />} />
+        <Route path="/rma/financial-monitor" element={<FinancialMonitorPage />} />
         <Route path="/rma/reports" element={<ReportsWorkspace />} />
         <Route path="/rma/notifications" element={<RmaNotificationsPage />} />
       </Route>
@@ -61,6 +64,7 @@ export function AppRoutes() {
       <Route element={<RoleGuard allow={['BM', 'Head of Retail', 'Risk', 'Management']}><ManagementLayout /></RoleGuard>}>
         <Route path="/management/dashboard" element={<ManagementDashboard />} />
         <Route path="/management/stations" element={<ManagementStationsPage />} />
+        <Route path="/management/financial-monitor" element={<FinancialMonitorPage />} />
         <Route path="/management/reports" element={<ReportsWorkspace />} />
         <Route path="/management/notifications" element={<ManagementNotificationsPage />} />
         <Route path="/management/outstanding" element={<OutstandingSubmissionsPage />} />

@@ -3,6 +3,8 @@ import { listAmendmentHistory, listAmendments } from '../services/amendment.serv
 import { getNow } from '../services/clock.service';
 import { KEYS, readCollection, subscribeStore } from '../services/storage';
 import { listReports } from '../services/report.service';
+import { listMonthlyLogs } from '../services/monthly-log.service';
+import type { MonthlyLog } from '../types/monthly-log';
 import { listStations } from '../services/stationService';
 import { listNudges, runScheduler } from '../services/submission.service';
 import { bmNameMap, getSessionUsers } from '../services/userService';
@@ -26,6 +28,8 @@ export interface SharedData {
   reports: WeeklyLog[];
   /** Current (highest) version per station + reporting week. */
   currentReports: WeeklyLog[];
+  /** Account Monitoring monthly logs (one per station per month). */
+  monthlyLogs: MonthlyLog[];
   amendments: AmendmentRequest[];
   amendmentHistory: AmendmentHistoryEntry[];
   notifications: AppNotification[];
@@ -45,6 +49,7 @@ const load = (): Omit<SharedData, 'refresh'> => {
     stations: listStations(),
     reports,
     currentReports: currentVersions(reports),
+    monthlyLogs: listMonthlyLogs(),
     amendments: listAmendments(),
     amendmentHistory: listAmendmentHistory(),
     notifications: readCollection<AppNotification>(KEYS.notifications),

@@ -24,20 +24,24 @@ export function displayStatus(row: LogListRow): { label: string; tone: 'green' |
   return { label: row.log.status, tone: 'green' };
 }
 
+/** The 11 TAR Monitor columns in the required order, followed by the existing BM / Status / Action columns. */
 const headers = [
   'Reporting Week',
   'Station Code',
   'Station Name',
   'Credit Limit',
   'Available Credit',
-  'Total Exposure',
+  'Trade Balance',
   'Available Stock',
-  'T.A.R Exposure/Debt',
+  'CIT',
+  'Total Stock',
+  'TAR',
+  'Exposure',
   'BM',
   'Status',
   'Action',
 ];
-const numeric = new Set([3, 4, 5, 6, 7]);
+const numeric = new Set([3, 4, 5, 6, 7, 8, 9, 10]);
 
 interface Props {
   rows: LogListRow[];
@@ -48,7 +52,7 @@ interface Props {
 export function WeeklyLogsTable({ rows, onView, onEdit }: Props) {
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-[1350px] w-full divide-y divide-slate-200">
+      <table className="min-w-[1750px] w-full divide-y divide-slate-200">
         <thead className="bg-slate-50">
           <tr>
             {headers.map((h, i) => (
@@ -74,12 +78,20 @@ export function WeeklyLogsTable({ rows, onView, onEdit }: Props) {
                 <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{formatWeek(log.reportingWeek)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">{stationCodeLabel(station)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{station.stationName}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNairaOrNA(station.creditLimit)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNairaOrNA(log.creditLimit)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNairaOrNA(log.availableCredit)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNaira(log.totalExposure)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNaira(log.tradeBalance)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNaira(log.availableStock)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">
+                  {formatNaira(log.cit)}
+                  {log.legacy && <span className="block text-[11px] text-amber-600" title="Migrated from the old structure: CIT was not recorded">Not recorded</span>}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNaira(log.totalStock)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
-                  <TarValue value={log.tarDebt} />
+                  <TarValue value={log.tar} />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
+                  <TarValue value={log.exposure} />
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{row.bm}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm">

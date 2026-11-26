@@ -6,6 +6,13 @@ body {
   @apply bg-slate-100 font-sans text-slate-900 antialiased;
 }
 
+/* Column titles and button labels never wrap onto a second line (tables scroll sideways instead). */
+th,
+button,
+[role='button'] {
+  white-space: nowrap;
+}
+
 /* Thin, light, neutral scrollbars across both portals (sidebar, content, tables, dropdowns, modals). */
 * {
   scrollbar-width: thin;

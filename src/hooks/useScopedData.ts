@@ -16,6 +16,7 @@ export function useScopedData() {
   const rmas = useMemo(() => scopeRmas(user, shared.users, stations), [user, shared.users, stations]);
   const reports = useMemo(() => scopeReports(shared.reports, stations), [shared.reports, stations]);
   const currentReports = useMemo(() => scopeReports(shared.currentReports, stations), [shared.currentReports, stations]);
+  const monthlyLogs = useMemo(() => scopeReports(shared.monthlyLogs, stations), [shared.monthlyLogs, stations]);
 
-  return { ...shared, user, stations, rmas, reports, currentReports };
+  return { ...shared, user, stations, rmas, reports, currentReports, monthlyLogs };
 }

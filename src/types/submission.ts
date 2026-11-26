@@ -1,3 +1,4 @@
+import type { Station } from './station';
 import type { SessionUser } from './user';
 
 export type SubmissionState = 'Submitted' | 'Pending' | 'Overdue';
@@ -21,9 +22,16 @@ export interface PerformanceRow {
   required: number;
   submitted: number;
   outstanding: number;
+  /** Every station-week counted in `outstanding` (no report submitted), oldest week first. */
+  outstandingReports: OutstandingReport[];
   onTime: number;
   late: number;
   compliance: number;
+}
+
+export interface OutstandingReport {
+  station: Station;
+  week: string;
 }
 
 export interface PerformanceTrendPoint {

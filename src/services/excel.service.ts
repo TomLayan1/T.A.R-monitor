@@ -1,24 +1,32 @@
 import type { Station } from '../types/station';
 import type { WeeklyLog } from '../types/weekly-log';
 import { fullName } from '../types/user';
-import { weeksBetween } from '../utils/date';
+import { formatMonth, weeksBetween } from '../utils/date';
+import { calculateFinancialMonitor } from '../utils/calculations';
+import type { MonthlyLog } from '../types/monthly-log';
+import { buildFinancialMonitorRows, listMonthlyLogs } from './monthly-log.service';
 import { getActor, getScope } from './access';
 import { recordAudit } from './audit.service';
 import { listReports } from './report.service';
 import { bmNameMap, getSessionUsers } from './userService';
 
 const NAIRA_FORMAT = '"₦"#,##0;-"₦"#,##0';
+/** Same column order as the Weekly Logs table (the reporting week is the worksheet name). */
 const HEADERS = [
   'STATION CODE',
   'STATION NAME',
   'CREDIT LIMIT',
   'AVAILABLE CREDIT',
-  'TOTAL EXPOSURE',
+  'TRADE BALANCE',
   'AVAILABLE STOCK',
-  'TAR EXPOSURE/DEBT',
+  'CIT',
+  'TOTAL STOCK',
+  'TAR',
+  'EXPOSURE',
   'RMA',
   'BM',
 ];
+const MONEY_COLS = 8; // C..J
 
 export interface WeekRow {
   station: Station;
@@ -47,7 +55,7 @@ export function buildWeekRows(stations: Station[], reports: WeeklyLog[], week: s
 }
 
 /**
- * Exports the weekly T.A.R/Debt workbook for the stations the actor may access (RMA: own stations; BM: assigned
+ * Exports the weekly TAR workbook for the stations the actor may access (RMA: own stations; BM: assigned
  * stations; Head of Retail / Risk / Management: all). An optional stationId narrows it further, but can never widen it.
  */
 export async function exportTarWorkbook(actorId: string, fromWeek: string, toWeek: string, stationId: string | null = null): Promise<string> {
@@ -70,7 +78,7 @@ export async function exportTarWorkbook(actorId: string, fromWeek: string, toWee
 
   for (const week of weeks) {
     const ws = wb.addWorksheet(week); // sheet name = Sunday week-ending date (YYYY-MM-DD)
-    ws.columns = HEADERS.map((header, i) => ({ header, key: `c${i}`, width: i === 1 ? 28 : i >= 7 ? 22 : 20 }));
+    ws.columns = HEADERS.map((header, i) => ({ header, key: `c${i}`, width: i === 1 ? 28 : i >= 10 ? 22 : 18 }));
     const head = ws.getRow(1);
     head.font = { bold: true, color: { argb: 'FFFFFFFF' } };
     head.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF013C1C' } };
@@ -78,11 +86,11 @@ export async function exportTarWorkbook(actorId: string, fromWeek: string, toWee
     ws.views = [{ state: 'frozen', ySplit: 1 }];
 
     const rows = buildWeekRows(stations, reports, week);
-    const sums = [0, 0, 0, 0, 0];
+    const sums = new Array<number>(MONEY_COLS).fill(0);
     rows.forEach(({ station, report, rma, bm }) => {
-      const nums = report
-        ? [station.creditLimit ?? 'N/A', report.availableCredit ?? 'N/A', report.totalExposure, report.availableStock, report.tarDebt]
-        : [station.creditLimit ?? 'N/A', 'NOT SUBMITTED', 'NOT SUBMITTED', 'NOT SUBMITTED', 'NOT SUBMITTED'];
+      const nums: Array<number | string> = report
+        ? [report.creditLimit ?? 'N/A', report.availableCredit ?? 'N/A', report.tradeBalance, report.availableStock, report.cit, report.totalStock, report.tar, report.exposure]
+        : [station.creditLimit ?? 'N/A', ...new Array<string>(MONEY_COLS - 1).fill('NOT SUBMITTED')];
       const row = ws.addRow([station.stationCode ?? 'PENDING', station.stationName, ...nums, rma, bm]);
       nums.forEach((v, i) => {
         const cell = row.getCell(3 + i);
@@ -97,25 +105,34 @@ export async function exportTarWorkbook(actorId: string, fromWeek: string, toWee
     });
 
     const last = rows.length + 1;
-    ws.autoFilter = { from: 'A1', to: `I${last}` };
+    ws.autoFilter = { from: 'A1', to: `L${last}` };
     ws.addRow([]);
-    const totals = ws.addRow(['TOTAL', '', ...['C', 'D', 'E', 'F', 'G'].map((col, i) => ({ formula: `SUBTOTAL(109,${col}2:${col}${last})`, result: sums[i] })), '', '']);
+    const moneyCols = ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+    const totals = ws.addRow(['TOTAL', '', ...moneyCols.map((col, i) => ({ formula: `SUBTOTAL(109,${col}2:${col}${last})`, result: sums[i] })), '', '']);
     totals.font = { bold: true };
-    for (let c = 3; c <= 7; c++) totals.getCell(c).numFmt = NAIRA_FORMAT;
+    for (let c = 3; c <= 10; c++) totals.getCell(c).numFmt = NAIRA_FORMAT;
 
-    // Conditional formatting for T.A.R/Debt (column G); ISNUMBER keeps "NOT SUBMITTED" unhighlighted.
-    ws.addConditionalFormatting({
-      ref: `G2:G${last}`,
-      rules: [
-        { type: 'expression', priority: 1, formulae: ['AND(ISNUMBER(G2),G2<0)'], style: { fill: fill('FFC6EFCE') } },
-        { type: 'expression', priority: 2, formulae: ['AND(ISNUMBER(G2),G2>0)'], style: { fill: fill('FFFFC7CE') } },
-      ],
-    });
+    // Conditional formatting for TAR (column I) and Exposure (column J); ISNUMBER keeps "NOT SUBMITTED" unhighlighted.
+    for (const col of ['I', 'J']) {
+      ws.addConditionalFormatting({
+        ref: `${col}2:${col}${last}`,
+        rules: [
+          { type: 'expression', priority: 1, formulae: [`AND(ISNUMBER(${col}2),${col}2<0)`], style: { fill: fill('FFC6EFCE') } },
+          { type: 'expression', priority: 2, formulae: [`AND(ISNUMBER(${col}2),${col}2>0)`], style: { fill: fill('FFFFC7CE') } },
+        ],
+      });
+    }
   }
 
-  const buffer = await wb.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const filename = `TAR_Monitoring_Report_${toWeek}.xlsx`;
+  await downloadWorkbook(wb, filename);
+  recordAudit(actor.id, 'REPORT_EXPORTED', 'workbook', filename, `${weeks.length} weekly sheet(s) ${fromWeek}..${toWeek}`);
+  return filename;
+}
+
+async function downloadWorkbook(wb: import('exceljs').Workbook, filename: string): Promise<void> {
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -124,6 +141,66 @@ export async function exportTarWorkbook(actorId: string, fromWeek: string, toWee
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-  recordAudit(actor.id, 'REPORT_EXPORTED', 'workbook', filename, `${weeks.length} weekly sheet(s) ${fromWeek}..${toWeek}`);
+}
+
+const FM_HEADERS = [
+  'STATION CODE',
+  'STATION NAME',
+  'OPENING STOCK',
+  'OPENING BALANCE',
+  'TOTAL OPENING STOCK',
+  'CLOSING STOCK',
+  'CLOSING BALANCE',
+  'TOTAL CLOSING STOCK',
+  'CHANGE IN BALANCE',
+  'CHANGE IN STOCK',
+  'NET EFFECT',
+  'REPORTING MONTH',
+];
+
+/**
+ * Financial Monitor workbook for the actor's scope. month = 'latest' exports each station's most recent monthly log;
+ * a YYYY-MM month exports that month. Figures are calculated from the monthly logs (the same source as the screen).
+ */
+export async function exportFinancialMonitorWorkbook(actorId: string, month: string | 'latest'): Promise<string> {
+  const actor = getActor(actorId);
+  const stations = getScope(actor).stations;
+  if (stations.length === 0) throw new Error('There are no stations in your scope to export.');
+  const rows = buildFinancialMonitorRows(stations, listMonthlyLogs(), month).sort((a, b) =>
+    (a.station.stationCode ?? '~').localeCompare(b.station.stationCode ?? '~'),
+  );
+  const mod = await import('exceljs');
+  const ExcelJS = (mod as unknown as { default?: typeof mod }).default ?? mod;
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'RMA Weekly Monitoring Portal';
+  const ws = wb.addWorksheet(month === 'latest' ? 'Latest month' : month);
+  ws.columns = FM_HEADERS.map((header, i) => ({ header, key: `c${i}`, width: i === 1 ? 28 : 20 }));
+  const head = ws.getRow(1);
+  head.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  head.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF013C1C' } };
+  ws.views = [{ state: 'frozen', ySplit: 1 }];
+  for (const { station, log } of rows) {
+    const f = log ? calculateFinancialMonitor(log as MonthlyLog) : null;
+    const nums = f
+      ? [f.openingStock, f.openingBalanceCit, f.totalOpeningStock, f.closingStock, f.closingBalanceCit, f.totalClosingStock, f.changeInBalance, f.changeInStock, f.netEffect]
+      : new Array<string>(9).fill('NO MONTHLY LOG');
+    const row = ws.addRow([station.stationCode ?? 'PENDING', station.stationName, ...nums, log ? formatMonth(log.reportingMonth) : '—']);
+    nums.forEach((v, i) => {
+      const cell = row.getCell(3 + i);
+      if (typeof v === 'number') cell.numFmt = NAIRA_FORMAT;
+      else cell.font = { italic: true, color: { argb: 'FF94A3B8' } };
+    });
+  }
+  const last = rows.length + 1;
+  ws.addConditionalFormatting({
+    ref: `K2:K${last}`,
+    rules: [
+      { type: 'expression', priority: 1, formulae: ['AND(ISNUMBER(K2),K2>0)'], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFFFC7CE' } } } },
+      { type: 'expression', priority: 2, formulae: ['AND(ISNUMBER(K2),K2<0)'], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFC6EFCE' } } } },
+    ],
+  });
+  const filename = `Financial_Monitor_${month === 'latest' ? 'Latest' : month}.xlsx`;
+  await downloadWorkbook(wb, filename);
+  recordAudit(actor.id, 'REPORT_EXPORTED', 'workbook', filename, `Financial Monitor, ${rows.length} station(s), ${month}`);
   return filename;
 }

@@ -1,4 +1,4 @@
-import { ArrowRight, Fuel, Menu, X } from 'lucide-react';
+import { ArrowRight, Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import logo from '../../assets/screenshots/logo.png'
@@ -60,8 +60,8 @@ export function PublicNavbar() {
 
         <div className="flex items-center gap-3">
           <Link
-            to="/sign-in"
-            className="group hidden items-center gap-2 rounded-full bg-pub-yellow px-5 py-2.5 text-sm font-bold text-pub-forest shadow-lg shadow-pub-yellow/25 transition hover:-translate-y-0.5 hover:shadow-pub-yellow/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-white sm:inline-flex"
+            to="/get-started"
+            className="group hidden items-center gap-2 rounded-full bg-pub-yellow px-5 py-2.5 text-sm font-bold text-pub-forest shadow-lg shadow-pub-yellow/25 transition hover:-translate-y-0.5 hover:shadow-pub-yellow/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-white sm:inline-flex whitespace-nowrap"
           >
             Get Started
             <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" aria-hidden />
@@ -93,7 +93,7 @@ export function PublicNavbar() {
                 {l.label}
               </NavLink>
             ))}
-            <Link to="/sign-in" className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-pub-yellow px-5 py-3 text-base font-bold text-pub-forest">
+            <Link to="/get-started" className="mt-2 inline-flex whitespace-nowrap items-center justify-center gap-2 rounded-full bg-pub-yellow px-5 py-3 text-base font-bold text-pub-forest">
               Get Started <ArrowRight className="h-4 w-4" />
             </Link>
           </nav>

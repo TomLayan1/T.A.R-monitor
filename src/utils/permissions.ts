@@ -9,6 +9,8 @@ import type { WeeklyLog } from '../types/weekly-log';
  * View own assigned stations       yes        yes             yes  yes  yes
  * View all stations                no         no              yes  yes  yes
  * Submit weekly reports            yes        no              no   no   no
+ * Submit monthly (account) logs     yes        no              no   no   no
+ * View Financial Monitor            own scope  assigned scope  all  all  all
  * Download reports                 own scope  assigned scope  all  all  all
  * Request amendments               yes        no              no   no   no
  * Approve / reject amendments      no         no              no   yes  no
@@ -17,6 +19,7 @@ import type { WeeklyLog } from '../types/weekly-log';
  */
 export const hasOrgWideAccess = (role: Role): boolean => role === 'Head of Retail' || role === 'Risk' || role === 'Management';
 export const canSubmitReports = (role: Role): boolean => role === 'RMA';
+export const canSubmitMonthlyLogs = (role: Role): boolean => role === 'RMA';
 export const canRequestAmendment = (role: Role): boolean => role === 'RMA';
 export const canDecideAmendment = (role: Role): boolean => role === 'Risk';
 export const canNudge = (role: Role): boolean => role === 'Management';
@@ -43,8 +46,8 @@ export function scopeRmas<T extends UserLike>(user: UserLike | null, users: T[],
   return rmas.filter((u) => u.bmId === user.id || owners.has(u.id));
 }
 
-/** Reports (all versions) for the stations in scope. */
-export function scopeReports(reports: WeeklyLog[], scopedStations: Station[]): WeeklyLog[] {
+/** Records (weekly report versions or monthly logs) for the stations in scope. */
+export function scopeReports<T extends Pick<WeeklyLog, 'stationId'>>(reports: T[], scopedStations: Station[]): T[] {
   const ids = new Set(scopedStations.map((s) => s.id));
   return reports.filter((r) => ids.has(r.stationId));
 }

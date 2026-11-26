@@ -1,21 +1,90 @@
+import type { FinancialMonitorFigures } from '../types/monthly-log';
 import type { Station } from '../types/station';
 import type { WeeklyLog } from '../types/weekly-log';
 
-/**
- * BUSINESS RULE (preserved exactly as specified, negatives are kept):
- * Available Credit = Total Exposure - Credit Limit
- */
-export const calculateAvailableCredit = (totalExposure: number, creditLimit: number | null): number | null =>
-  creditLimit === null ? null : totalExposure - creditLimit; // null: credit limit not yet supplied by S4HANA
+/* =========================================================================================================
+ * TAR MONITOR: the ONLY place the weekly formulas live. Forms, tables, dashboards, exports, notifications and
+ * amendments all call these functions, so the RMA and Stakeholder portals always show the same values.
+ * ========================================================================================================= */
 
 /**
- * BUSINESS RULE: T.A.R Exposure/Debt = Available Stock - Total Exposure
+ * BUSINESS RULE (preserved exactly as specified; negatives are kept):
+ * Available Credit = Trade Balance - Credit Limit
+ * null when S4HANA has not supplied the credit limit yet.
  */
-export const calculateTarDebt = (availableStock: number, totalExposure: number): number =>
-  availableStock - totalExposure;
+export const calculateAvailableCredit = (tradeBalance: number, creditLimit: number | null): number | null =>
+  creditLimit === null ? null : tradeBalance - creditLimit;
 
-/** Any positive T.A.R/Debt (even 1 naira) is a debt position and triggers notifications. There is no amount threshold. */
-export const isPositiveTar = (tarDebt: number): boolean => tarDebt > 0;
+/** Total Stock = Available Stock + CIT */
+export const calculateTotalStock = (availableStock: number, cit: number): number => availableStock + cit;
+
+/** TAR = Available Stock - Trade Balance */
+export const calculateTar = (availableStock: number, tradeBalance: number): number => availableStock - tradeBalance;
+
+/** Exposure = TAR - Available Stock + CIT (implemented exactly as specified, not algebraically simplified). */
+export const calculateExposure = (tar: number, availableStock: number, cit: number): number => tar - availableStock + cit;
+
+export interface WeeklyFigures {
+  creditLimit: number | null;
+  tradeBalance: number;
+  availableStock: number;
+  cit: number;
+  availableCredit: number | null;
+  totalStock: number;
+  tar: number;
+  exposure: number;
+}
+
+/** All weekly TAR figures from the S4HANA values and the RMA inputs. */
+export function calculateWeeklyFigures(input: { creditLimit: number | null; tradeBalance: number; availableStock: number; cit: number }): WeeklyFigures {
+  const tar = calculateTar(input.availableStock, input.tradeBalance);
+  return {
+    creditLimit: input.creditLimit,
+    tradeBalance: input.tradeBalance,
+    availableStock: input.availableStock,
+    cit: input.cit,
+    availableCredit: calculateAvailableCredit(input.tradeBalance, input.creditLimit),
+    totalStock: calculateTotalStock(input.availableStock, input.cit),
+    tar,
+    exposure: calculateExposure(tar, input.availableStock, input.cit),
+  };
+}
+
+/** Any positive TAR (even 1 naira) is a debt position and triggers notifications. There is no amount threshold. */
+export const isPositiveTar = (tar: number): boolean => tar > 0;
+
+/* =========================================================================================================
+ * FINANCIAL MONITOR (Account Monitoring, monthly)
+ * ========================================================================================================= */
+
+/** Total Opening Stock = Opening Stock + Opening Balance */
+export const calculateTotalOpeningStock = (openingStock: number, openingBalanceCit: number): number => openingStock + openingBalanceCit;
+/** Total Closing Stock = Closing Stock + Closing Balance */
+export const calculateTotalClosingStock = (closingStock: number, closingBalanceCit: number): number => closingStock + closingBalanceCit;
+/** Change in Balance = Closing Balance - Opening Balance */
+export const calculateChangeInBalance = (closingBalanceCit: number, openingBalanceCit: number): number => closingBalanceCit - openingBalanceCit;
+/** Change in Stock = Total Closing Stock - Total Opening Stock */
+export const calculateChangeInStock = (totalClosingStock: number, totalOpeningStock: number): number => totalClosingStock - totalOpeningStock;
+/** Net Effect = Change in Stock - Change in Balance */
+export const calculateNetEffect = (changeInStock: number, changeInBalance: number): number => changeInStock - changeInBalance;
+
+export function calculateFinancialMonitor(log: { openingStock: number; openingBalanceCit: number; closingStock: number; closingBalanceCit: number }): FinancialMonitorFigures {
+  const totalOpeningStock = calculateTotalOpeningStock(log.openingStock, log.openingBalanceCit);
+  const totalClosingStock = calculateTotalClosingStock(log.closingStock, log.closingBalanceCit);
+  const changeInBalance = calculateChangeInBalance(log.closingBalanceCit, log.openingBalanceCit);
+  const changeInStock = calculateChangeInStock(totalClosingStock, totalOpeningStock);
+  return {
+    openingStock: log.openingStock,
+    openingBalanceCit: log.openingBalanceCit,
+    totalOpeningStock,
+    closingStock: log.closingStock,
+    closingBalanceCit: log.closingBalanceCit,
+    totalClosingStock,
+    changeInBalance,
+    changeInStock,
+    netEffect: calculateNetEffect(changeInStock, changeInBalance),
+  };
+}
 
 /** Later reporting week wins, then higher version, then later submission time. */
 export const isLaterLog = (a: WeeklyLog, b: WeeklyLog): boolean => {
@@ -65,37 +134,46 @@ export interface DashboardSummary {
   stationCount: number;
   totalCredit: number;
   totalAvailableCredit: number;
+  totalTradeBalance: number;
   totalAvailableStock: number;
+  totalCit: number;
+  totalStock: number;
+  totalTar: number;
   totalExposure: number;
   positiveTarStations: number;
 }
 
+/** Totals over each station's latest weekly log (stations without a log add nothing except their credit limit). */
 export function summarise(snapshots: StationSnapshot[]): DashboardSummary {
   return snapshots.reduce<DashboardSummary>(
     (acc, { station, log }) => ({
       stationCount: acc.stationCount + 1,
       totalCredit: acc.totalCredit + (station.creditLimit ?? 0),
       totalAvailableCredit: acc.totalAvailableCredit + (log?.availableCredit ?? 0),
+      totalTradeBalance: acc.totalTradeBalance + (log?.tradeBalance ?? 0),
       totalAvailableStock: acc.totalAvailableStock + (log?.availableStock ?? 0),
-      totalExposure: acc.totalExposure + (log?.totalExposure ?? 0),
-      positiveTarStations: acc.positiveTarStations + (log && isPositiveTar(log.tarDebt) ? 1 : 0),
+      totalCit: acc.totalCit + (log?.cit ?? 0),
+      totalStock: acc.totalStock + (log?.totalStock ?? 0),
+      totalTar: acc.totalTar + (log?.tar ?? 0),
+      totalExposure: acc.totalExposure + (log?.exposure ?? 0),
+      positiveTarStations: acc.positiveTarStations + (log && isPositiveTar(log.tar) ? 1 : 0),
     }),
-    { stationCount: 0, totalCredit: 0, totalAvailableCredit: 0, totalAvailableStock: 0, totalExposure: 0, positiveTarStations: 0 },
+    { stationCount: 0, totalCredit: 0, totalAvailableCredit: 0, totalTradeBalance: 0, totalAvailableStock: 0, totalCit: 0, totalStock: 0, totalTar: 0, totalExposure: 0, positiveTarStations: 0 },
   );
 }
 
-/** Highest T.A.R/Debt first, based on each station's latest weekly log. */
+/** Highest TAR first, based on each station's latest weekly log. */
 export function topTarStations(snapshots: StationSnapshot[], count = 4): LoggedSnapshot[] {
   return snapshots
     .filter(hasLog)
-    .sort((a, b) => b.log.tarDebt - a.log.tarDebt)
+    .sort((a, b) => b.log.tar - a.log.tar)
     .slice(0, count);
 }
 
 export interface TarChartDatum {
   stationCode: string;
   stationName: string;
-  tarDebt: number;
+  tar: number;
 }
 
 export function buildTarChartData(snapshots: StationSnapshot[]): TarChartDatum[] {
@@ -104,41 +182,41 @@ export function buildTarChartData(snapshots: StationSnapshot[]): TarChartDatum[]
     .map(({ station, log }) => ({
       stationCode: station.stationCode ?? station.stationName,
       stationName: station.stationName,
-      tarDebt: log.tarDebt,
+      tar: log.tar,
     }))
-    .sort((a, b) => b.tarDebt - a.tarDebt);
+    .sort((a, b) => b.tar - a.tar);
 }
 
 export interface Utilisation {
   totalLimit: number;
-  totalExposure: number;
+  totalTradeBalance: number;
   withinLimit: number;
   aboveLimit: number;
   unused: number;
   percent: number;
 }
 
-/** Share of total credit limits consumed by the latest reported exposure. */
+/** Share of total credit limits consumed by the latest S4HANA Trade Balance (which replaces the old Total Exposure). */
 export function buildUtilisation(snapshots: StationSnapshot[]): Utilisation {
   let totalLimit = 0;
-  let totalExposure = 0;
+  let totalTradeBalance = 0;
   let withinLimit = 0;
   let aboveLimit = 0;
   for (const { station, log } of snapshots) {
     if (station.creditLimit === null) continue; // no credit limit yet: cannot measure utilisation
     totalLimit += station.creditLimit;
     if (!log) continue;
-    const exposure = Math.max(log.totalExposure, 0);
-    totalExposure += exposure;
-    withinLimit += Math.min(exposure, station.creditLimit);
-    aboveLimit += Math.max(exposure - station.creditLimit, 0);
+    const balance = Math.max(log.tradeBalance, 0);
+    totalTradeBalance += balance;
+    withinLimit += Math.min(balance, station.creditLimit);
+    aboveLimit += Math.max(balance - station.creditLimit, 0);
   }
   return {
     totalLimit,
-    totalExposure,
+    totalTradeBalance,
     withinLimit,
     aboveLimit,
     unused: totalLimit - withinLimit,
-    percent: totalLimit > 0 ? (totalExposure / totalLimit) * 100 : 0,
+    percent: totalLimit > 0 ? (totalTradeBalance / totalLimit) * 100 : 0,
   };
 }

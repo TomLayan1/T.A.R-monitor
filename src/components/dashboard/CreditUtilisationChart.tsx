@@ -12,7 +12,7 @@ export function CreditUtilisationChart({ utilisation }: { utilisation: Utilisati
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 className="text-base font-semibold text-slate-900">Credit Utilisation Overview</h2>
-      <p className="mt-0.5 text-xs text-slate-500">Latest total exposure as a share of total credit limits.</p>
+      <p className="mt-0.5 text-xs text-slate-500">Latest trade balance (S4HANA) as a share of total credit limits.</p>
 
       <div className="relative mt-2 h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">

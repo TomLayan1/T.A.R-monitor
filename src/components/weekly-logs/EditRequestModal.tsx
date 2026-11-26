@@ -9,7 +9,7 @@ import { Modal } from '../ui/Modal';
 import { useToast } from '../ui/Toast';
 import type { LogListRow } from './WeeklyLogsTable';
 
-/** Edit does NOT unlock the report: it only raises a request for the Head of Retail. */
+/** Edit does NOT unlock the report: it only raises a request for Risk to approve. */
 export function EditRequestModal({ row, onClose }: { row: LogListRow | null; onClose: () => void }) {
   const { request } = useAmendments();
   const { notify } = useToast();
@@ -32,7 +32,7 @@ export function EditRequestModal({ row, onClose }: { row: LogListRow | null; onC
     setSubmitting(true);
     try {
       await request(row.log.id, reason);
-      notify('success', 'Your amendment request has been submitted and is pending Head of Retail approval.');
+      notify('success', 'Your amendment request has been submitted and is pending Risk approval.');
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not submit the request.');
@@ -46,7 +46,7 @@ export function EditRequestModal({ row, onClose }: { row: LogListRow | null; onC
       {row && (
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <p className="text-sm text-slate-600">
-            {row.station.stationName} ({stationCodeLabel(row.station)}). The report stays locked until the Head of Retail approves your request.
+            {row.station.stationName} ({stationCodeLabel(row.station)}). The report stays locked until Risk approves your request.
           </p>
           <Input label="Reporting Week / Week Ending" value={formatWeek(row.log.reportingWeek)} readOnly />
           <div>

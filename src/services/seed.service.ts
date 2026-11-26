@@ -1,15 +1,20 @@
 import stationsJson from '../data/stations.json';
 import usersJson from '../data/users.json';
 import reportsJson from '../data/weekly-reports.json';
+import monthlyLogsJson from '../data/monthly-logs.json';
+import type { AmendmentHistoryEntry, AmendmentRequest } from '../types/amendment';
+import type { MonthlyLog } from '../types/monthly-log';
 import type { Station } from '../types/station';
 import type { StoredUser } from '../types/user';
 import { fullName } from '../types/user';
 import type { WeeklyLog } from '../types/weekly-log';
-import { latestLogByStation } from '../utils/calculations';
+import { calculateWeeklyFigures, latestLogByStation } from '../utils/calculations';
+import { s4hana } from './s4hana.service';
+import { getNow } from './clock.service';
 import { maybeAlertPositiveTar } from './notification.service';
 import { KEYS, batch, readJSON, writeJSON } from './storage';
 
-const SEED_VERSION = '2026-11-v4';
+const SEED_VERSION = '2026-11-v6-entered-trade-balance';
 
 /** Copies the JSON demo data into the shared store ONCE. Imported JSON is never mutated. */
 export function ensureSeeded(): void {
@@ -25,6 +30,7 @@ export function ensureSeeded(): void {
     seedIfMissing(KEYS.users, usersJson as StoredUser[]);
     seedIfMissing(KEYS.stations, stationsJson as Station[]);
     seedIfMissing(KEYS.reports, reportsJson as WeeklyLog[]);
+    seedIfMissing(KEYS.monthlyLogs, monthlyLogsJson as MonthlyLog[]);
     seedIfMissing(KEYS.onboarding, []);
     seedIfMissing(KEYS.amendments, []);
     seedIfMissing(KEYS.amendmentHistory, []);
@@ -77,6 +83,8 @@ export function ensureSeeded(): void {
       writeJSON(KEYS.notifications, oldNotifications.map((n) => (n.category === 'High T.A.R' ? { ...n, category: 'Positive T.A.R' } : n)), false);
     }
 
+    migrateWeeklyStructure();
+
     // Starter alerts: the latest seeded report per station that has a positive T.A.R (history, deduplicated per report).
     const stations = stationsJson as Station[];
     const users = usersJson as StoredUser[];
@@ -101,4 +109,92 @@ export function resetDemoData(): void {
     /* ignore */
   }
   ensureSeeded();
+}
+
+type LegacyReport = Partial<WeeklyLog> & { id: string; stationId: string; reportingWeek: string; availableStock: number; totalExposure?: number; tarDebt?: number };
+
+/**
+ * TAR MONITOR MIGRATION. Weekly logs are converted, never deleted; the RMA's own figures are never replaced by a
+ * generated one.
+ *  - Old structure (RMA-entered "Total Exposure", no CIT): untouched seed records are replaced by the new seed
+ *    version; anything else keeps its Available Stock, takes its Trade Balance from the old Total Exposure (the
+ *    same RMA-entered figure under its new name), records CIT as ₦0 and keeps the old figures under `legacy`.
+ *  - Logs written by the previous build (Trade Balance simulated from S4HANA): a converted log takes its Trade
+ *    Balance from `legacy.totalExposure`; an untouched seed log is refreshed from the new seed. Logs an RMA
+ *    submitted are kept as they are.
+ * Amendment requests and history are re-derived from the reports in the same pass.
+ */
+function migrateWeeklyStructure(): void {
+  const stored = readJSON<LegacyReport[]>(KEYS.reports);
+  if (!stored) return;
+  const seedById = new Map((reportsJson as WeeklyLog[]).map((r) => [r.id, r]));
+  const untouchedSeed = (r: LegacyReport) => {
+    const fresh = seedById.get(r.id);
+    if (!fresh || fresh.availableStock !== r.availableStock || fresh.version !== r.version || fresh.submittedAt !== r.submittedAt) return null;
+    // Old-structure records match on Available Stock; previous-build seed records must also keep the seed CIT.
+    return typeof r.cit === 'number' && r.cit !== fresh.cit ? null : fresh;
+  };
+  const migratedAt = getNow().toISOString();
+  const recalc = (r: WeeklyLog, tradeBalance: number): WeeklyLog => ({
+    ...r,
+    ...calculateWeeklyFigures({ creditLimit: r.creditLimit, tradeBalance, availableStock: r.availableStock, cit: r.cit }),
+  });
+  const reports: WeeklyLog[] = stored.map((r) => {
+    const fresh = untouchedSeed(r);
+    if (typeof r.tradeBalance === 'number') {
+      const log = r as WeeklyLog;
+      if (log.legacy) return log.tradeBalance === log.legacy.totalExposure ? log : recalc(log, log.legacy.totalExposure);
+      return fresh ? { ...fresh } : log;
+    }
+    if (fresh) return { ...fresh };
+    const station = readJSON<Station[]>(KEYS.stations)?.find((st) => st.id === r.stationId);
+    const creditLimit = station ? s4hana.getCreditLimit(station) : null;
+    const { totalExposure, tarDebt, ...rest } = r;
+    return {
+      ...(rest as WeeklyLog),
+      ...calculateWeeklyFigures({ creditLimit, tradeBalance: totalExposure ?? 0, availableStock: r.availableStock, cit: 0 }),
+      legacy: { totalExposure: totalExposure ?? 0, tarDebt: tarDebt ?? 0, migratedAt },
+    };
+  });
+  writeJSON(KEYS.reports, reports, false);
+  const byId = new Map(reports.map((r) => [r.id, r]));
+
+  const amendments = readJSON<Array<AmendmentRequest & { originalTotalExposure?: number }>>(KEYS.amendments) ?? [];
+  writeJSON(
+    KEYS.amendments,
+    amendments.map(({ originalTotalExposure: _old, ...a }) => {
+      const report = byId.get(a.reportId);
+      return { ...a, originalTradeBalance: report?.tradeBalance ?? a.originalTradeBalance ?? 0, originalCit: report?.cit ?? a.originalCit ?? 0 };
+    }),
+    false,
+  );
+
+  type LegacyHistory = Partial<AmendmentHistoryEntry> & Pick<AmendmentHistoryEntry, 'id' | 'originalReportId' | 'updatedReportId'> & { tradeBalance?: number };
+  const history = readJSON<LegacyHistory[]>(KEYS.amendmentHistory) ?? [];
+  const legacyKeys = ['tradeBalance', 'originalTotalExposure', 'originalAvailableCredit', 'originalTarDebt', 'updatedTotalExposure', 'updatedAvailableCredit', 'updatedTarDebt'];
+  writeJSON(
+    KEYS.amendmentHistory,
+    history.map((h) => {
+      const o = byId.get(h.originalReportId);
+      const u = byId.get(h.updatedReportId);
+      const clean = Object.fromEntries(Object.entries(h).filter(([k]) => !legacyKeys.includes(k)));
+      const oldTb = h.originalTradeBalance ?? h.tradeBalance ?? 0;
+      return {
+        ...clean,
+        originalTradeBalance: o?.tradeBalance ?? oldTb,
+        originalAvailableStock: o?.availableStock ?? h.originalAvailableStock ?? 0,
+        originalCit: o?.cit ?? h.originalCit ?? 0,
+        originalTotalStock: o?.totalStock ?? h.originalTotalStock ?? 0,
+        originalTar: o?.tar ?? h.originalTar ?? 0,
+        originalExposure: o?.exposure ?? h.originalExposure ?? 0,
+        updatedTradeBalance: u?.tradeBalance ?? h.updatedTradeBalance ?? oldTb,
+        updatedAvailableStock: u?.availableStock ?? h.updatedAvailableStock ?? 0,
+        updatedCit: u?.cit ?? h.updatedCit ?? 0,
+        updatedTotalStock: u?.totalStock ?? h.updatedTotalStock ?? 0,
+        updatedTar: u?.tar ?? h.updatedTar ?? 0,
+        updatedExposure: u?.exposure ?? h.updatedExposure ?? 0,
+      };
+    }),
+    false,
+  );
 }

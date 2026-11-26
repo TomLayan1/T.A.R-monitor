@@ -9,6 +9,7 @@ export const KEYS = {
   stations: 'rma_system_stations',
   onboarding: 'rma_system_station_onboarding',
   reports: 'rma_system_weekly_reports',
+  monthlyLogs: 'rma_system_monthly_logs',
   amendments: 'rma_system_amendment_requests',
   amendmentHistory: 'rma_system_amendment_history',
   notifications: 'rma_system_notifications',
@@ -24,6 +25,8 @@ const CHANNEL_NAME = 'rma_system_sync';
 let channel: BroadcastChannel | null = null;
 try {
   channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(CHANNEL_NAME) : null;
+  // Node (unit tests) keeps a process alive while a channel is open; browsers have no unref.
+  (channel as unknown as { unref?: () => void } | null)?.unref?.();
 } catch {
   channel = null;
 }

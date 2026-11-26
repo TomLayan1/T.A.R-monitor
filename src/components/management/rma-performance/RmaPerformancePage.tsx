@@ -3,9 +3,13 @@ import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContai
 import { useScopedData } from '../../../hooks/useScopedData';
 import { useSubmissionStatus } from '../../../hooks/useSubmissionStatus';
 import { computePerformance, stationSubmissionsForWeek } from '../../../services/submission.service';
-import { currentWeekEnding, formatWeek, weeksBetween } from '../../../utils/date';
+import { stationCodeLabel } from '../../../types/station';
+import type { PerformanceRow } from '../../../types/submission';
+import { currentWeekEnding, deadlineFor, formatWeek, weeksBetween } from '../../../utils/date';
 import { SummaryCard } from '../../dashboard/SummaryCard';
+import { Badge } from '../../ui/Badge';
 import { Select } from '../../ui/Input';
+import { Modal } from '../../ui/Modal';
 import { AlertTriangle, CheckCircle2, ClipboardX, Clock, Percent, Users } from 'lucide-react';
 
 const th = 'whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500';
@@ -17,6 +21,7 @@ export function RmaPerformancePage() {
   const current = currentWeekEnding(now);
   const [week, setWeek] = useState('all');
   const [rma, setRma] = useState('all');
+  const [detail, setDetail] = useState<PerformanceRow | null>(null);
 
   const allWeeks = useMemo(() => {
     const first = reports.map((r) => r.reportingWeek).sort()[0] ?? current;
@@ -89,12 +94,25 @@ export function RmaPerformancePage() {
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {rows.map((r) => (
-                <tr key={r.rma.id} className="hover:bg-slate-50">
-                  <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">{r.rma.firstName} {r.rma.surname}</td>
+                <tr key={r.rma.id} className="cursor-pointer hover:bg-slate-50" onClick={() => setDetail(r)}>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDetail(r);
+                      }}
+                      className="font-medium text-brand hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      {r.rma.firstName} {r.rma.surname}
+                    </button>
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{r.bmName}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{r.stationCount}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{r.submitted}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{r.outstanding}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
+                    <span className={r.outstanding > 0 ? 'font-semibold text-red-600' : 'text-slate-700'}>{r.outstanding}</span>
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{r.onTime}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{r.late}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-slate-900">{r.compliance.toFixed(1)}%</td>
@@ -138,6 +156,53 @@ export function RmaPerformancePage() {
           </div>
         </section>
       </div>
+
+      <Modal
+        open={detail !== null}
+        title={detail ? `Outstanding reports: ${detail.rma.firstName} ${detail.rma.surname}` : 'Outstanding reports'}
+        onClose={() => setDetail(null)}
+      >
+        {detail && (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-600">
+              {detail.outstanding === 0
+                ? 'Every assigned station has a submitted report for the selected period.'
+                : `${detail.outstanding} station ${detail.outstanding === 1 ? 'report has' : 'reports have'} not been submitted for ${week === 'all' ? 'the weeks shown' : formatWeek(week).toLowerCase()}.`}
+            </p>
+            {detail.outstanding > 0 && (
+              <div className="overflow-x-auto rounded-lg border border-slate-200">
+                <table className="w-full min-w-[520px] divide-y divide-slate-200 text-sm">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className={`${th} text-left`}>Station Code</th>
+                      <th className={`${th} text-left`}>Station Name</th>
+                      <th className={`${th} text-left`}>Reporting Week</th>
+                      <th className={`${th} text-left`}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {[...detail.outstandingReports]
+                      .sort((a, b) => b.week.localeCompare(a.week) || (a.station.stationCode ?? '').localeCompare(b.station.stationCode ?? ''))
+                      .map(({ station, week: w }) => {
+                        const overdueNow = now.getTime() > deadlineFor(w).getTime();
+                        return (
+                          <tr key={`${station.id}|${w}`}>
+                            <td className="whitespace-nowrap px-4 py-2.5 font-medium text-slate-900">{stationCodeLabel(station)}</td>
+                            <td className="whitespace-nowrap px-4 py-2.5 text-slate-700">{station.stationName}</td>
+                            <td className="whitespace-nowrap px-4 py-2.5 text-slate-700">{formatWeek(w)}</td>
+                            <td className="whitespace-nowrap px-4 py-2.5">
+                              <Badge tone={overdueNow ? 'rose' : 'amber'}>{overdueNow ? 'Overdue' : 'Pending'}</Badge>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

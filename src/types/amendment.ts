@@ -17,8 +17,10 @@ export interface AmendmentRequest {
   decisionComment: string | null;
   completedAt: string | null;
   resultingReportId: string | null;
-  originalTotalExposure: number;
+  /** S4HANA value recorded with the original report (not editable by the RMA). */
+  originalTradeBalance: number;
   originalAvailableStock: number;
+  originalCit: number;
 }
 
 export interface AmendmentHistoryEntry {
@@ -29,14 +31,18 @@ export interface AmendmentHistoryEntry {
   reportingWeek: string;
   originalReportId: string;
   updatedReportId: string;
-  originalTotalExposure: number;
+  originalTradeBalance: number;
   originalAvailableStock: number;
-  originalAvailableCredit: number | null;
-  originalTarDebt: number;
-  updatedTotalExposure: number;
+  originalCit: number;
+  originalTotalStock: number;
+  originalTar: number;
+  originalExposure: number;
+  updatedTradeBalance: number;
   updatedAvailableStock: number;
-  updatedAvailableCredit: number | null;
-  updatedTarDebt: number;
+  updatedCit: number;
+  updatedTotalStock: number;
+  updatedTar: number;
+  updatedExposure: number;
   requestingRmaId: string;
   approvedById: string;
   reason: string;

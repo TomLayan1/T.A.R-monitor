@@ -76,7 +76,7 @@ export function ReportsWorkspace() {
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Weekly reports</h2>
           <p className="text-sm text-slate-500">
-            Historical weekly reports for {scopeText}. Excel downloads have one worksheet per week, named by the Sunday week-ending date.
+            Historical weekly reports for {scopeText}.
           </p>
         </div>
         <Button onClick={handleExport} loading={busy} disabled={sheets.length === 0 || stations.length === 0} icon={<Download className="h-4 w-4" />}>
@@ -119,9 +119,12 @@ export function ReportsWorkspace() {
                     <th className={`${th} text-left`}>Station Name</th>
                     <th className={`${th} text-right`}>Credit Limit</th>
                     <th className={`${th} text-right`}>Available Credit</th>
-                    <th className={`${th} text-right`}>Total Exposure</th>
+                    <th className={`${th} text-right`}>Trade Balance</th>
                     <th className={`${th} text-right`}>Available Stock</th>
-                    <th className={`${th} text-right`}>T.A.R/Debt</th>
+                    <th className={`${th} text-right`}>CIT</th>
+                    <th className={`${th} text-right`}>Total Stock</th>
+                    <th className={`${th} text-right`}>TAR</th>
+                    <th className={`${th} text-right`}>Exposure</th>
                     <th className={`${th} text-left`}>Submitted</th>
                     <th className={`${th} text-left`}>Version</th>
                   </tr>
@@ -134,11 +137,14 @@ export function ReportsWorkspace() {
                         <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{formatWeek(r.reportingWeek)}</td>
                         <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">{st ? stationCodeLabel(st) : 'Pending'}</td>
                         <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{st?.stationName ?? '—'}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNairaOrNA(st?.creditLimit ?? null)}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNairaOrNA(r.creditLimit ?? st?.creditLimit ?? null)}</td>
                         <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNairaOrNA(r.availableCredit, '—')}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNaira(r.totalExposure)}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNaira(r.tradeBalance)}</td>
                         <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNaira(r.availableStock)}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm"><TarValue value={r.tarDebt} /></td>
+                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{r.legacy ? 'Not recorded' : formatNaira(r.cit)}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNaira(r.totalStock)}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm"><TarValue value={r.tar} /></td>
+                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm"><TarValue value={r.exposure} /></td>
                         <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{formatDateTime(r.submittedAt)}</td>
                         <td className="whitespace-nowrap px-4 py-3 text-sm">{r.version > 1 ? <Badge tone="amber">Amended v{r.version}</Badge> : <Badge tone="green">v1</Badge>}</td>
                       </tr>

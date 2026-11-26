@@ -101,3 +101,27 @@ export const fromWatInputValue = (value: string): Date => {
   const [hh, mm] = timePart.split(':').map(Number);
   return new Date(Date.UTC(y, m - 1, d, hh - 1, mm, 0, 0));
 };
+
+/* ---- Reporting months (Account Monitoring), identified as YYYY-MM in WAT ---- */
+
+export const isMonthKey = (m: string): boolean => /^\d{4}-(0[1-9]|1[0-2])$/.test(m);
+
+/** The current reporting month in Nigeria (WAT). */
+export const currentMonth = (now: Date): string => {
+  const p = watParts(now);
+  return `${p.year}-${pad(p.month)}`;
+};
+
+export const addMonths = (month: string, delta: number): string => {
+  const [y, m] = month.split('-').map(Number);
+  const total = y * 12 + (m - 1) + delta;
+  return `${Math.floor(total / 12)}-${pad((total % 12) + 1)}`;
+};
+
+/** The current month plus the previous `count - 1` months, newest first. */
+export const recentMonths = (now: Date, count = 12): string[] => Array.from({ length: count }, (_, i) => addMonths(currentMonth(now), -i));
+
+export const formatMonth = (month: string): string => {
+  const [y, m] = month.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+};

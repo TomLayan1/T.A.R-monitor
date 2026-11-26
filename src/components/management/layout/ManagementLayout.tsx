@@ -1,4 +1,4 @@
-import { Bell, Building2, FileSpreadsheet, LayoutDashboard, ShieldCheck, TrendingUp } from 'lucide-react';
+import { Bell, Building2, FileSpreadsheet, Landmark, LayoutDashboard, ShieldCheck, TrendingUp } from 'lucide-react';
 import { useMemo } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useNotifications } from '../../../hooks/useNotifications';
@@ -9,6 +9,7 @@ import type { NavItem } from '../../layout/Sidebar';
 const titles: Array<[string, string]> = [
   ['/management/dashboard', 'Dashboard'],
   ['/management/stations', 'Stations'],
+  ['/management/financial-monitor', 'Financial Monitor'],
   ['/management/reports', 'Reports'],
   ['/management/notifications', 'Notifications'],
   ['/management/outstanding-stations', 'Outstanding Stations'],
@@ -28,6 +29,7 @@ export function ManagementLayout() {
     () => [
       { to: '/management/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/management/stations', label: 'Stations', icon: Building2 },
+      { to: '/management/financial-monitor', label: 'Financial Monitor', icon: Landmark },
       { to: '/management/reports', label: 'Reports', icon: FileSpreadsheet },
       { to: '/management/notifications', label: 'Notifications', icon: Bell, badge: unreadCount },
       ...(isRisk ? [{ to: '/management/approvals', label: 'Pending Approvals', icon: ShieldCheck }] : []),

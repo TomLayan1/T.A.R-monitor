@@ -4,13 +4,14 @@ import type { NewNotification } from '../types/notification';
 import type { StoredUser } from '../types/user';
 import type { WeeklyLog } from '../types/weekly-log';
 import { fullName } from '../types/user';
+import { formatNaira } from '../utils/currency';
 import { formatWeek } from '../utils/date';
 import { canDecideAmendment, canRequestAmendment } from '../utils/permissions';
 import { getActor } from './access';
 import { recordAudit } from './audit.service';
 import { getNow } from './clock.service';
 import { associatedBm, maybeAlertPositiveTar, pushNotifications, riskUsers, routes } from './notification.service';
-import { buildReport, listReports, validateAmounts } from './report.service';
+import { buildReport, listReports, validateAmounts, type WeeklyInputs } from './report.service';
 import { KEYS, batch, newId, readCollection, saveCollection } from './storage';
 
 export const listAmendments = (): AmendmentRequest[] => readCollection<AmendmentRequest>(KEYS.amendments);
@@ -76,8 +77,9 @@ export function requestAmendment(actorId: string, reportId: string, reason: stri
     decisionComment: null,
     completedAt: null,
     resultingReportId: null,
-    originalTotalExposure: report.totalExposure,
+    originalTradeBalance: report.tradeBalance,
     originalAvailableStock: report.availableStock,
+    originalCit: report.cit,
   };
 
   batch(() => {
@@ -126,7 +128,7 @@ export function decideAmendment(actorId: string, requestId: string, decision: 'A
       category: approved ? 'Amendment Approved' : 'Amendment Rejected',
       title: approved ? `Edit approved: ${stationRef(request)}` : `Edit rejected: ${stationRef(request)}`,
       description: approved
-        ? `The request for ${request.stationName} (${formatWeek(request.reportingWeek).toLowerCase()}) was approved by Risk. The RMA can now update Total Exposure and Available Stock.`
+        ? `The request for ${request.stationName} (${formatWeek(request.reportingWeek).toLowerCase()}) was approved by Risk. The RMA can now update Available Stock and Cash in Till (CIT). Trade Balance stays as recorded from S4HANA.`
         : `The request for ${request.stationName} (${formatWeek(request.reportingWeek).toLowerCase()}) was rejected by Risk.${updated.decisionComment ? ` Comment: ${updated.decisionComment}` : ''}`,
       link: u.role === 'RMA' ? routes.rmaWeeklyLogs(stationRef(request)) : routes.mgmtStations(stationRef(request)),
       stationId: request.stationId,
@@ -138,14 +140,14 @@ export function decideAmendment(actorId: string, requestId: string, decision: 'A
 }
 
 /** RMA resubmits an approved amendment: creates version n+1, preserves the original, locks again. */
-export function completeAmendment(actorId: string, requestId: string, totalExposure: number, availableStock: number): WeeklyLog {
+export function completeAmendment(actorId: string, requestId: string, inputs: WeeklyInputs): WeeklyLog {
   const actor = getActor(actorId);
   if (!canRequestAmendment(actor.role)) throw new Error('You do not have permission to perform this action.');
   const requests = listAmendments();
   const request = requests.find((a) => a.id === requestId);
   if (!request || request.rmaId !== actor.id) throw new Error('Amendment request not found.');
   if (request.status !== 'Approved') throw new Error('This report is not unlocked for editing.');
-  validateAmounts(totalExposure, availableStock);
+  validateAmounts(inputs.tradeBalance, inputs.availableStock, inputs.cit);
 
   const reports = listReports();
   const original = reports.find((r) => r.id === request.reportId);
@@ -155,14 +157,15 @@ export function completeAmendment(actorId: string, requestId: string, totalExpos
     throw new Error('A newer version of this report already exists.');
   }
 
-  // Only Total Exposure and Available Stock change; reporting week, comments and the rest are carried over.
+  // The RMA inputs (Trade Balance, Available Stock, CIT) change. The S4HANA Credit Limit recorded with the original
+  // report is carried over unchanged, as are the reporting week and comments.
   const updatedReport = buildReport(
     station,
     actor,
     { reportingWeek: original.reportingWeek, version: original.version + 1, status: 'Amended' },
-    totalExposure,
-    availableStock,
+    inputs,
     original.comments ?? null,
+    original.creditLimit,
   );
   const now = getNow().toISOString();
   const history: AmendmentHistoryEntry = {
@@ -173,14 +176,18 @@ export function completeAmendment(actorId: string, requestId: string, totalExpos
     reportingWeek: original.reportingWeek,
     originalReportId: original.id,
     updatedReportId: updatedReport.id,
-    originalTotalExposure: original.totalExposure,
+    originalTradeBalance: original.tradeBalance,
     originalAvailableStock: original.availableStock,
-    originalAvailableCredit: original.availableCredit,
-    originalTarDebt: original.tarDebt,
-    updatedTotalExposure: updatedReport.totalExposure,
+    originalCit: original.cit,
+    originalTotalStock: original.totalStock,
+    originalTar: original.tar,
+    originalExposure: original.exposure,
+    updatedTradeBalance: updatedReport.tradeBalance,
     updatedAvailableStock: updatedReport.availableStock,
-    updatedAvailableCredit: updatedReport.availableCredit,
-    updatedTarDebt: updatedReport.tarDebt,
+    updatedCit: updatedReport.cit,
+    updatedTotalStock: updatedReport.totalStock,
+    updatedTar: updatedReport.tar,
+    updatedExposure: updatedReport.exposure,
     requestingRmaId: request.rmaId,
     approvedById: request.decidedById ?? '',
     reason: request.reason,
@@ -196,14 +203,14 @@ export function completeAmendment(actorId: string, requestId: string, totalExpos
       requests.map((a) => (a.id === request.id ? { ...a, status: 'Completed' as const, completedAt: now, resultingReportId: updatedReport.id } : a)),
     );
     recordAudit(actor.id, 'AMENDMENT_COMPLETED', 'report', updatedReport.id, `${stationRef(station)} v${original.version}->v${updatedReport.version}`);
-    // The amended figures are evaluated like any other report: any positive T.A.R notifies every user.
+    // The amended figures are evaluated like any other report: any positive TAR notifies every user.
     maybeAlertPositiveTar(updatedReport, station, fullName(actor));
     // Workflow notice: Risk users and the associated BM only.
     notifyEach(dedupeUsers([...riskUsers(), associatedBm(station)]), (u) => ({
       key: `amd-complete:${request.id}`,
       category: 'Amendment Completed',
       title: `Amended report resubmitted: ${stationRef(station)}`,
-      description: `${fullName(actor)} resubmitted ${station.stationName} for the ${formatWeek(original.reportingWeek).toLowerCase()}. T.A.R changed from ${original.tarDebt} to ${updatedReport.tarDebt}.`,
+      description: `${fullName(actor)} resubmitted ${station.stationName} for the ${formatWeek(original.reportingWeek).toLowerCase()}. TAR changed from ${formatNaira(original.tar)} to ${formatNaira(updatedReport.tar)}; Exposure from ${formatNaira(original.exposure)} to ${formatNaira(updatedReport.exposure)}.`,
       link: u.role === 'Risk' ? routes.mgmtApprovals : routes.mgmtStations(stationRef(station)),
       stationId: station.id,
       reportId: updatedReport.id,

@@ -7,7 +7,7 @@ const steps = [
   {
     icon: ClipboardList,
     title: 'RMAs report weekly',
-    text: 'Enter Total Exposure and Available Stock for each assigned station. Available Credit and T.A.R/Debt are calculated for you.',
+    text: 'Enter Trade Balance, Available Stock and Cash in Till for each assigned station. Available Credit, Total Stock, TAR and Exposure are calculated for you.',
   },
   {
     icon: LayoutDashboard,
@@ -17,7 +17,7 @@ const steps = [
   {
     icon: BellRing,
     title: 'Alerts reach everyone',
-    text: 'Every positive T.A.R/Debt position alerts all users, and late weekly reports are flagged automatically.',
+    text: 'Every positive TAR position alerts all users, and late weekly reports are flagged automatically.',
   },
 ];
 
@@ -61,8 +61,8 @@ export function HomePage() {
           <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Ready to see your station network clearly?</h2>
           <p className="mt-4 text-white/70">Sign in with your role and start monitoring, reporting and reviewing.</p>
           <Link
-            to="/sign-in"
-            className="group mt-8 inline-flex items-center gap-2 rounded-full bg-pub-yellow px-8 py-4 text-base font-bold text-pub-forest shadow-xl shadow-pub-yellow/25 transition hover:-translate-y-0.5"
+            to="/get-started"
+            className="group mt-8 inline-flex whitespace-nowrap items-center gap-2 rounded-full bg-pub-yellow px-8 py-4 text-base font-bold text-pub-forest shadow-xl shadow-pub-yellow/25 transition hover:-translate-y-0.5"
           >
             Get Started <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" aria-hidden />
           </Link>

@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "npx --yes tsx --test tests/*.test.ts",
+    "migrate:seed": "npx --yes tsx scripts/migrate-seed-data.ts"
   },
   "dependencies": {
     "exceljs": "^4.4.0",

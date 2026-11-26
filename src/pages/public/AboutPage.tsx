@@ -18,9 +18,10 @@ import { delayVar } from '../../components/public/Reveal';
 const capabilities = [
   { icon: ClipboardList, text: 'Weekly reporting by RMAs' },
   { icon: Gauge, text: 'Station credit and exposure monitoring' },
-  { icon: TrendingUp, text: 'T.A.R/Debt tracking' },
-  { icon: BellRing, text: 'Financial notifications on positive T.A.R' },
+  { icon: TrendingUp, text: 'TAR tracking' },
+  { icon: BellRing, text: 'Financial notifications on positive TAR' },
   { icon: History, text: 'Historical reporting' },
+  { icon: Wallet, text: 'Monthly account monitoring and Financial Monitor' },
   { icon: ClipboardCheck, text: 'Amendment requests and approval workflows' },
   { icon: Users, text: 'RMA performance monitoring' },
   { icon: Building2, text: 'Management oversight across the station network' },
@@ -28,8 +29,8 @@ const capabilities = [
 
 const benefits = [
   { icon: FileSpreadsheet, title: 'Automated Reporting', text: 'Simplify weekly reporting and reduce manual Excel calculations.' },
-  { icon: Wallet, title: 'Financial Visibility', text: 'Monitor station exposure, available stock, and T.A.R/Debt positions.' },
-  { icon: BellRing, title: 'Proactive Risk Monitoring', text: 'Identify positive T.A.R/Debt positions as they are reported, through automated alerts to every user.' },
+  { icon: Wallet, title: 'Financial Visibility', text: 'Monitor station exposure, available stock, and TAR positions.' },
+  { icon: BellRing, title: 'Proactive Risk Monitoring', text: 'Identify positive TAR positions as they are reported, through automated alerts to every user.' },
   { icon: UserCheck, title: 'Improved Accountability', text: 'Track weekly submissions, outstanding reports, and RMA performance.' },
   { icon: LayoutDashboard, title: 'Centralised Management', text: 'Give stakeholders a unified view of station performance and operational activities.' },
   { icon: ClipboardCheck, title: 'Transparent Approvals', text: 'Manage amendment requests through structured approval workflows and audit history.' },

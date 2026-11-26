@@ -2,47 +2,62 @@ import { stationRef, type Station } from '../types/station';
 import type { NewWeeklyLogInput, WeeklyLog } from '../types/weekly-log';
 import { fullName } from '../types/user';
 import type { StoredUser } from '../types/user';
-import { calculateAvailableCredit, calculateTarDebt } from '../utils/calculations';
+import { calculateWeeklyFigures } from '../utils/calculations';
+import { formatNaira } from '../utils/currency';
 import { currentWeekEnding, isSunday } from '../utils/date';
 import { getActor, requireRole } from './access';
 import { recordAudit } from './audit.service';
 import { getNow } from './clock.service';
 import { maybeAlertPositiveTar } from './notification.service';
+import { s4hana } from './s4hana.service';
 import { KEYS, batch, newId, readCollection, saveCollection } from './storage';
 
 export const listReports = (): WeeklyLog[] => readCollection<WeeklyLog>(KEYS.reports);
 
-export function validateAmounts(totalExposure: number, availableStock: number): void {
-  for (const [label, v] of [['Total Exposure', totalExposure], ['Available Stock', availableStock]] as const) {
+/** RMA inputs: Trade Balance, Available Stock and Cash in Till (CIT). */
+export function validateAmounts(tradeBalance: number, availableStock: number, cit: number): void {
+  for (const [label, v] of [['Trade Balance', tradeBalance], ['Available Stock', availableStock], ['Cash in Till (CIT)', cit]] as const) {
     if (!Number.isFinite(v)) throw new Error(`${label} must be a valid number.`);
     if (v < 0) throw new Error(`${label} cannot be negative.`);
   }
 }
 
-/** Builds a report version; derived figures always come from the central formulas. */
+/** The station's credit limit, read through the S4HANA adapter only (never taken from the UI). */
+export const creditLimitFor = (station: Station): number | null => s4hana.getCreditLimit(station);
+
+/** The RMA-entered amounts of one weekly log. */
+export interface WeeklyInputs {
+  tradeBalance: number;
+  availableStock: number;
+  cit: number;
+}
+
+/**
+ * Builds a report version. Derived figures always come from the central formulas. `creditLimit` lets an
+ * amendment keep the credit limit that was recorded with the original report.
+ */
 export function buildReport(
   station: Station,
   actor: StoredUser,
   base: Pick<WeeklyLog, 'reportingWeek' | 'version' | 'status'>,
-  totalExposure: number,
-  availableStock: number,
+  inputs: WeeklyInputs,
   comments: string | null,
+  creditLimit: number | null = creditLimitFor(station),
 ): WeeklyLog {
+  const figures = calculateWeeklyFigures({ creditLimit, ...inputs });
   return {
     id: newId('rpt'),
     stationId: station.id,
     stationCode: station.stationCode,
     reportingWeek: base.reportingWeek,
     submittedAt: getNow().toISOString(),
-    totalExposure,
-    availableStock,
-    availableCredit: calculateAvailableCredit(totalExposure, station.creditLimit),
-    tarDebt: calculateTarDebt(availableStock, totalExposure),
+    ...figures,
     rmaId: actor.id,
     bmId: station.bmId ?? actor.bmId,
     status: base.status,
     version: base.version,
     comments,
+    legacy: null,
   };
 }
 
@@ -53,7 +68,7 @@ export function submitReport(actorId: string, input: NewWeeklyLogInput): WeeklyL
   const station = readCollection<Station>(KEYS.stations).find((s) => s.id === input.stationId);
   if (!station) throw new Error('Station not found.');
   if (station.rmaId !== actor.id) throw new Error('This station is not assigned to you.');
-  validateAmounts(input.totalExposure, input.availableStock);
+  validateAmounts(input.tradeBalance, input.availableStock, input.cit);
   if (!isSunday(input.reportingWeek)) throw new Error('Reporting week must be a week-ending Sunday.');
   if (input.reportingWeek > currentWeekEnding(getNow())) throw new Error('You cannot report for a future week.');
 
@@ -62,10 +77,10 @@ export function submitReport(actorId: string, input: NewWeeklyLogInput): WeeklyL
     throw new Error('A weekly log has already been submitted for this station and reporting week.');
   }
 
-  const report = buildReport(station, actor, { reportingWeek: input.reportingWeek, version: 1, status: 'Submitted' }, input.totalExposure, input.availableStock, input.comments?.trim() || null);
+  const report = buildReport(station, actor, { reportingWeek: input.reportingWeek, version: 1, status: 'Submitted' }, { tradeBalance: input.tradeBalance, availableStock: input.availableStock, cit: input.cit }, input.comments?.trim() || null);
   batch(() => {
     saveCollection(KEYS.reports, [...reports, report]);
-    recordAudit(actor.id, 'REPORT_SUBMITTED', 'report', report.id, `${stationRef(station)} week ending ${report.reportingWeek}, T.A.R ${report.tarDebt}`);
+    recordAudit(actor.id, 'REPORT_SUBMITTED', 'report', report.id, `${stationRef(station)} week ending ${report.reportingWeek}: trade balance ${formatNaira(report.tradeBalance)}, stock ${formatNaira(report.availableStock)}, CIT ${formatNaira(report.cit)}, TAR ${formatNaira(report.tar)}, exposure ${formatNaira(report.exposure)}`);
     maybeAlertPositiveTar(report, station, fullName(actor));
   });
   return report;

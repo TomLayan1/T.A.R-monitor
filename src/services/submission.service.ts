@@ -212,6 +212,7 @@ export function computePerformance(
       required: 0,
       submitted: 0,
       outstanding: 0,
+      outstandingReports: [],
       onTime: 0,
       late: 0,
       compliance: 0,
@@ -225,6 +226,7 @@ export function computePerformance(
         const first = firstSubmission.get(`${st.id}|${week}`);
         if (!first) {
           row.outstanding += 1;
+          row.outstandingReports.push({ station: st, week });
           point.outstanding += 1;
         } else {
           row.submitted += 1;

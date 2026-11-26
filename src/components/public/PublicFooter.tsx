@@ -7,7 +7,7 @@ const columns: Array<{ title: string; links: Array<{ label: string; to: string }
     links: [
       { label: 'Home', to: '/' },
       { label: 'About', to: '/about' },
-      { label: 'Get Started', to: '/sign-in' },
+      { label: 'Get Started', to: '/get-started' },
     ],
   },
   {
@@ -44,7 +44,7 @@ export function PublicFooter() {
             </span>
           </Link>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
-            Weekly reporting, station exposure and T.A.R tracking in one place for RMAs and stakeholders.
+            Weekly reporting, station exposure and TAR tracking in one place for RMAs and stakeholders.
           </p>
         </div>
 

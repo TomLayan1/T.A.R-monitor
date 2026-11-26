@@ -17,7 +17,7 @@ export function WeeklyLogSummary({ station }: { station: Station }) {
       </div>
       <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-500">
         <Lock className="h-3.5 w-3.5" aria-hidden />
-        Station code, name and credit limit come from S4HANA (simulated by JSON in this MVP) and cannot be edited.
+        Station code, name and credit limit come from S4HANA (simulated in this MVP) and cannot be edited.
       </p>
     </section>
   );

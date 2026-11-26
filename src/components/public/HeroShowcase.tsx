@@ -36,7 +36,7 @@ export function HeroShowcase() {
         <div className="transition-transform duration-700 [transform:rotateY(-9deg)_rotateX(4deg)] hover:[transform:rotateY(-3deg)_rotateX(1deg)]">
           <BrowserFrame
             src={dashboardShot}
-            alt="RMA portal dashboard showing station count, credit totals, top stations by T.A.R/Debt and credit utilisation"
+            alt="RMA portal dashboard showing station count, credit totals, top stations by TAR and credit utilisation"
             label="RMA Portal / Dashboard"
             ratio="1600 / 720"
           />
@@ -61,7 +61,7 @@ export function HeroShowcase() {
       </div>
       <div style={layer(24, 14)} className="absolute -bottom-3 right-0 hidden sm:block">
         <div className="pub-float pub-glass flex items-center gap-2.5 px-4 py-2.5 !rounded-full text-sm font-semibold text-white" style={delayVar(900)}>
-          <Bell className="h-4 w-4 text-pub-lime" aria-hidden /> T.A.R/Debt alerts
+          <Bell className="h-4 w-4 text-pub-lime" aria-hidden /> TAR alerts
         </div>
       </div>
     </div>

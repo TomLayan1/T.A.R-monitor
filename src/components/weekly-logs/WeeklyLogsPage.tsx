@@ -20,7 +20,7 @@ import { AmendReportModal } from './AmendReportModal';
 import { EditRequestModal } from './EditRequestModal';
 import { WeeklyLogsTable, displayStatus, type LogListRow } from './WeeklyLogsTable';
 
-type SortMode = 'newest' | 'tar-desc' | 'tar-asc';
+type SortMode = 'newest' | 'tar-desc' | 'tar-asc' | 'exposure-desc' | 'exposure-asc';
 
 export function WeeklyLogsPage() {
   const { stations, loading: stationsLoading } = useStations();
@@ -47,8 +47,10 @@ export function WeeklyLogsPage() {
       if (q && !(station.stationCode ?? '').toLowerCase().includes(q) && !station.stationName.toLowerCase().includes(q)) continue;
       list.push({ log, station, rma: rmaName(log.rmaId), bm: bmName(log.bmId), amendment: amendmentFor(log.stationId, log.reportingWeek) });
     }
-    if (sort === 'tar-desc') list.sort((a, b) => b.log.tarDebt - a.log.tarDebt);
-    if (sort === 'tar-asc') list.sort((a, b) => a.log.tarDebt - b.log.tarDebt);
+    if (sort === 'tar-desc') list.sort((a, b) => b.log.tar - a.log.tar);
+    if (sort === 'tar-asc') list.sort((a, b) => a.log.tar - b.log.tar);
+    if (sort === 'exposure-desc') list.sort((a, b) => b.log.exposure - a.log.exposure);
+    if (sort === 'exposure-asc') list.sort((a, b) => a.log.exposure - b.log.exposure);
     return list;
   }, [logs, stationById, query, week, sort, rmaName, bmName, amendmentFor]);
 
@@ -83,7 +85,7 @@ export function WeeklyLogsPage() {
       <div>
         <h2 className="text-lg font-semibold text-slate-900">Submitted weekly logs</h2>
         <p className="text-sm text-slate-500">
-          All logs submitted for your assigned stations. Submitted logs are read-only; use Edit to ask the Head of Retail for a correction.
+          All logs submitted for your assigned stations. Submitted logs are read-only; use Edit to ask Risk for a correction.
         </p>
       </div>
 
@@ -105,8 +107,10 @@ export function WeeklyLogsPage() {
         </FilterSelect>
         <FilterSelect value={sort} onChange={(v) => setSort(v as SortMode)} ariaLabel="Sort weekly logs">
           <option value="newest">Sort: Newest first</option>
-          <option value="tar-desc">Sort: T.A.R/Debt high to low</option>
-          <option value="tar-asc">Sort: T.A.R/Debt low to high</option>
+          <option value="tar-desc">Sort: TAR high to low</option>
+          <option value="tar-asc">Sort: TAR low to high</option>
+          <option value="exposure-desc">Sort: Exposure high to low</option>
+          <option value="exposure-asc">Sort: Exposure low to high</option>
         </FilterSelect>
       </FilterBar>
 
@@ -141,11 +145,15 @@ export function WeeklyLogsPage() {
             <dl className="grid gap-4 sm:grid-cols-2">
               {detail('Reporting week', formatWeek(selected.log.reportingWeek))}
               {detail('Station', `${selected.station.stationName} (${stationCodeLabel(selected.station)})`)}
-              {detail('Credit limit', formatNairaOrNA(selected.station.creditLimit))}
-              {detail('Total exposure', formatNaira(selected.log.totalExposure))}
-              {detail('Available credit (Total Exposure - Credit Limit)', formatNairaOrNA(selected.log.availableCredit))}
+              {detail('Credit limit (S4HANA)', formatNairaOrNA(selected.log.creditLimit))}
+              {detail('Available credit (Trade Balance - Credit Limit)', formatNairaOrNA(selected.log.availableCredit))}
+              {detail('Trade balance', formatNaira(selected.log.tradeBalance))}
               {detail('Available stock', formatNaira(selected.log.availableStock))}
-              {detail('T.A.R exposure/debt (Available Stock - Total Exposure)', <TarValue value={selected.log.tarDebt} />)}
+              {detail('Cash in Till (CIT)', selected.log.legacy ? `${formatNaira(selected.log.cit)} (not recorded before CIT was introduced)` : formatNaira(selected.log.cit))}
+              {detail('Total stock (Available Stock + CIT)', formatNaira(selected.log.totalStock))}
+              {detail('TAR (Available Stock - Trade Balance)', <TarValue value={selected.log.tar} />)}
+              {detail('Exposure (TAR - Available Stock + CIT)', <TarValue value={selected.log.exposure} />)}
+              {selected.log.legacy && detail('Old Total Exposure (before migration)', formatNaira(selected.log.legacy.totalExposure))}
               {detail('Log ID', selected.log.id)}
               {detail('RMA', selected.rma)}
               {detail('BM', selected.bm)}
@@ -160,7 +168,7 @@ export function WeeklyLogsPage() {
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
                 <p className="font-medium">Latest edit request: {selected.amendment.status}</p>
                 <p className="mt-1">Reason: {selected.amendment.reason}</p>
-                {selected.amendment.decisionComment && <p className="mt-1">Head of Retail comment: {selected.amendment.decisionComment}</p>}
+                {selected.amendment.decisionComment && <p className="mt-1">Risk comment: {selected.amendment.decisionComment}</p>}
               </div>
             )}
             {selectedHistory.length > 0 && (
@@ -170,10 +178,10 @@ export function WeeklyLogsPage() {
                   {selectedHistory.map((h) => (
                     <li key={h.id} className="rounded-lg border border-slate-200 p-3">
                       <p>
-                        Exposure {formatNaira(h.originalTotalExposure)} to {formatNaira(h.updatedTotalExposure)}; stock {formatNaira(h.originalAvailableStock)} to {formatNaira(h.updatedAvailableStock)}.
+                        Trade balance {formatNaira(h.originalTradeBalance)} to {formatNaira(h.updatedTradeBalance)}; available stock {formatNaira(h.originalAvailableStock)} to {formatNaira(h.updatedAvailableStock)}; CIT {formatNaira(h.originalCit)} to {formatNaira(h.updatedCit)}.
                       </p>
                       <p className="mt-1 flex flex-wrap items-center gap-1">
-                        T.A.R <TarValue value={h.originalTarDebt} /> to <TarValue value={h.updatedTarDebt} />. Approved {formatDate(h.approvalDate.slice(0, 10))}, resubmitted {formatDate(h.resubmissionDate.slice(0, 10))}.
+                        TAR <TarValue value={h.originalTar} /> to <TarValue value={h.updatedTar} />; Exposure <TarValue value={h.originalExposure} /> to <TarValue value={h.updatedExposure} />. Approved {formatDate(h.approvalDate.slice(0, 10))}, resubmitted {formatDate(h.resubmissionDate.slice(0, 10))}.
                       </p>
                     </li>
                   ))}

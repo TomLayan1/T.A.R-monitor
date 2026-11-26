@@ -16,7 +16,7 @@ import { useToast } from '../../ui/Toast';
 const th = 'whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500';
 const tone = (s: AmendmentRequest['status']) => (s === 'Pending Approval' ? 'amber' : s === 'Rejected' ? 'rose' : 'green');
 
-/** Head of Retail only (route guard + service-level role check on approve/reject). */
+/** Risk only (route guard + service-level role check on approve/reject). */
 export function PendingApprovalsPage() {
   const { all, pending, decide } = useAmendments();
   const { rmaNames, reports } = useSharedData();
@@ -90,8 +90,9 @@ export function PendingApprovalsPage() {
                   <th className={th}>Station Code</th>
                   <th className={th}>Station Name</th>
                   <th className={th}>Reporting Week</th>
-                  <th className={th}>Original Total Exposure</th>
+                  <th className={th}>Trade Balance</th>
                   <th className={th}>Original Available Stock</th>
+                  <th className={th}>Original CIT</th>
                   <th className={th}>Reason for Edit</th>
                   <th className={th}>Request Date</th>
                   <th className={th}>Status</th>
@@ -106,8 +107,9 @@ export function PendingApprovalsPage() {
                     <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900">{stationCodeLabel(a)}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{a.stationName}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{formatWeek(a.reportingWeek)}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{formatNaira(a.originalTotalExposure)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{formatNaira(a.originalTradeBalance)}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{formatNaira(a.originalAvailableStock)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{formatNaira(a.originalCit)}</td>
                     <td className="max-w-xs truncate px-4 py-3 text-sm text-slate-700" title={a.reason}>{a.reason}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700">{formatDateTime(a.requestedAt)}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm"><Badge tone={tone(a.status)}>{a.status}</Badge></td>
@@ -133,10 +135,12 @@ export function PendingApprovalsPage() {
               {field('Requested by', rmaNames[selected.rmaId] ?? selected.rmaId)}
               {field('Station', `${selected.stationName} (${stationCodeLabel(selected)})`)}
               {field('Reporting week', formatWeek(selected.reportingWeek))}
-              {field('Original total exposure', formatNaira(selected.originalTotalExposure))}
+              {field('Original trade balance', formatNaira(selected.originalTradeBalance))}
               {field('Original available stock', formatNaira(selected.originalAvailableStock))}
+              {field('Original CIT', formatNaira(selected.originalCit))}
               {originalReport && field('Original available credit', formatNairaOrNA(originalReport.availableCredit))}
-              {originalReport && field('Original T.A.R/Debt', <TarValue value={originalReport.tarDebt} />)}
+              {originalReport && field('Original TAR', <TarValue value={originalReport.tar} />)}
+              {originalReport && field('Original exposure', <TarValue value={originalReport.exposure} />)}
               {field('Requested', formatDateTime(selected.requestedAt))}
               {selected.decidedAt && field('Decided', formatDateTime(selected.decidedAt))}
             </dl>
@@ -146,7 +150,7 @@ export function PendingApprovalsPage() {
             </div>
             {selected.decisionComment && (
               <div>
-                <p className="text-xs text-slate-500">Head of Retail comment</p>
+                <p className="text-xs text-slate-500">Risk comment</p>
                 <p className="mt-0.5 text-sm text-slate-800">{selected.decisionComment}</p>
               </div>
             )}

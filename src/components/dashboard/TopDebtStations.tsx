@@ -13,8 +13,8 @@ interface Props {
   showExposure?: boolean;
 }
 
-export function TopDebtStations({ rows, title = 'Top 4 Stations by T.A.R/Debt', showExposure = false }: Props) {
-  const maxAbs = Math.max(...rows.map((r) => Math.abs(r.log.tarDebt)), 1);
+export function TopDebtStations({ rows, title = 'Top 4 Stations by TAR', showExposure = false }: Props) {
+  const maxAbs = Math.max(...rows.map((r) => Math.abs(r.log.tar)), 1);
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -36,15 +36,15 @@ export function TopDebtStations({ rows, title = 'Top 4 Stations by T.A.R/Debt', 
                     <p className="truncate text-sm font-medium text-slate-900">
                       {station.stationName} <span className="text-slate-500">({stationCodeLabel(station)})</span>
                     </p>
-                    <TarValue value={log.tarDebt} className="shrink-0 text-sm font-semibold" />
+                    <TarValue value={log.tar} className="shrink-0 text-sm font-semibold" />
                   </div>
                   {showExposure && (
-                    <p className="text-xs text-slate-500">Total exposure: {formatNaira(log.totalExposure)}</p>
+                    <p className="text-xs text-slate-500">Trade balance: {formatNaira(log.tradeBalance)} · Exposure: {formatNaira(log.exposure)}</p>
                   )}
                   <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
                     <div
                       className="h-full rounded-full"
-                      style={{ width: `${(Math.abs(log.tarDebt) / maxAbs) * 100}%`, backgroundColor: tarHex(log.tarDebt) }}
+                      style={{ width: `${(Math.abs(log.tar) / maxAbs) * 100}%`, backgroundColor: tarHex(log.tar) }}
                     />
                   </div>
                 </div>

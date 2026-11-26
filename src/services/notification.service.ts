@@ -86,19 +86,19 @@ export const routes = {
 };
 
 /**
- * Positive T.A.R/Debt alert. ANY positive T.A.R (even 1 naira) notifies EVERY registered user, whatever
+ * Positive TAR alert (TAR = Available Stock - Trade Balance). ANY positive TAR (even 1 naira) notifies EVERY registered user, whatever
  * their role. Negative and zero never notify. There is no amount threshold. Each submitted report
  * (including every amended version) is evaluated independently and deduplicated per report id + user.
  */
 export function maybeAlertPositiveTar(report: WeeklyLog, station: Station, rmaName: string, createdAt?: string): void {
-  if (!isPositiveTar(report.tarDebt)) return;
+  if (!isPositiveTar(report.tar)) return;
   const users = readCollection<StoredUser>(KEYS.users);
   pushNotifications(
     users.map((u) => ({
       userId: u.id,
       category: 'Positive T.A.R' as const,
-      title: `Positive T.A.R: ${stationRef(station)}`,
-      description: `${station.stationName} (${stationCodeLabel(station)}) reported a positive T.A.R/Debt of ${formatNaira(report.tarDebt)} for the ${formatWeek(report.reportingWeek).toLowerCase()} (report v${report.version}, exposure ${formatNaira(report.totalExposure)}, stock ${formatNaira(report.availableStock)}). RMA: ${rmaName}.`,
+      title: `Positive TAR: ${stationRef(station)}`,
+      description: `${station.stationName} (${stationCodeLabel(station)}) reported a positive TAR of ${formatNaira(report.tar)} for the ${formatWeek(report.reportingWeek).toLowerCase()} (report v${report.version}: trade balance ${formatNaira(report.tradeBalance)}, available stock ${formatNaira(report.availableStock)}, CIT ${formatNaira(report.cit)}, exposure ${formatNaira(report.exposure)}). RMA: ${rmaName}.`,
       link:
         u.role === 'RMA'
           ? station.rmaId === u.id
