@@ -139,7 +139,7 @@ export function MonthlyLogForm({ station }: { station: Station }) {
                 onChange={(e) => setClosingBalance(e.target.value)} onBlur={() => setShowErrors(true)} error={showErrors ? errors.closingBalance : undefined} />
             </div>
 
-            <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:grid-cols-3 lg:grid-cols-5">
+            {/* <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:grid-cols-3 lg:grid-cols-5">
               {[
                 ['Total Opening Stock', preview?.totalOpeningStock],
                 ['Total Closing Stock', preview?.totalClosingStock],
@@ -155,16 +155,16 @@ export function MonthlyLogForm({ station }: { station: Station }) {
                 <p className="text-xs text-slate-500">Net Effect</p>
                 <p className="mt-1 text-sm">{preview ? <NetEffectValue value={preview.netEffect} /> : <span className="font-semibold text-slate-900">—</span>}</p>
               </div>
-            </div>
+            </div> */}
 
-            <div className="mt-4">
+            {/* <div className="mt-4">
               <label htmlFor="monthly-comments" className="mb-1.5 block text-sm font-medium text-slate-700">
                 Comments <span className="font-normal text-slate-400">(optional)</span>
               </label>
               <textarea id="monthly-comments" rows={2} maxLength={1000} value={comments} disabled={!isRma} onChange={(e) => setComments(e.target.value)}
                 placeholder="Explain stock write-offs, deliveries in transit or balance differences"
                 className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:bg-slate-100" />
-            </div>
+            </div> */}
 
             <div className="mt-6 flex justify-end">
               <Button type="submit" loading={submitting} disabled={!isRma} icon={<Send className="h-4 w-4" />}>
@@ -175,7 +175,7 @@ export function MonthlyLogForm({ station }: { station: Station }) {
         )}
       </form>
 
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      {/* <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
           <h3 className="text-base font-semibold text-slate-900">Monthly history</h3>
           <p className="text-xs text-slate-500">Submitted monthly logs for this station. Each month opens with the previous month's closing values.</p>
@@ -216,7 +216,7 @@ export function MonthlyLogForm({ station }: { station: Station }) {
             </table>
           </div>
         )}
-      </section>
+      </section> */}
     </div>
   );
 }
