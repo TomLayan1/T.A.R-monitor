@@ -56,16 +56,16 @@ export function DashboardOverview() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <SummaryCard label="Number of Stations" value={String(summary.stationCount)} icon={Building2} hint="Assigned to you" />
-        <SummaryCard label="Total Credit" value={formatNaira(summary.totalCredit)} icon={Wallet} hint="Sum of credit limits" />
+        <SummaryCard label="Total Credit" value={formatNaira(summary.totalCredit)} icon={Wallet} hint="" />
         <SummaryCard
           label="Total Available Credit"
           value={formatNaira(summary.totalAvailableCredit)}
           icon={WalletCards}
-          hint="Trade Balance - Credit Limit"
+          hint=""
         />
-        <SummaryCard label="Total Available Stock" value={formatNaira(summary.totalAvailableStock)} icon={Fuel} hint="Latest weekly logs" />
-        <SummaryCard label="Total CIT" value={formatNaira(summary.totalCit)} icon={Banknote} hint="Cash in Till, latest weekly logs" />
-        <SummaryCard label="Exposure" value={formatNaira(summary.totalExposure)} icon={Gauge} hint="TAR - Available Stock + CIT" />
+        <SummaryCard label="Total Available Stock" value={formatNaira(summary.totalAvailableStock)} icon={Fuel} hint="" />
+        <SummaryCard label="Total Cash in Till" value={formatNaira(summary.totalCit)} icon={Banknote} hint="" />
+        <SummaryCard label="Exposure" value={formatNaira(summary.totalExposure)} icon={Gauge} hint="" />
       </div>
 
       {logs.length === 0 ? (
