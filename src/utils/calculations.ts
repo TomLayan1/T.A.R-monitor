@@ -60,7 +60,7 @@ export const isPositiveTar = (tar: number): boolean => tar > 0;
 /** Opening/Closing All = Stock + C.I.T */
 export const calculateAll = (stock: number, cit: number): number => stock + cit;
 /** Networth = C.I.T - Stock */
-export const calculateNetworth = (cit: number, stock: number): number => cit - stock;
+export const calculateNetworth = (all: number, balance: number): number => all - balance;
 /** Closing Balance = Opening Balance + Turnover - Payment - Non-stock margin */
 export const calculateClosingBalance = (openingBalance: number, turnover: number, payment: number, nonStockMargin: number): number =>
   openingBalance + turnover - payment - nonStockMargin;
@@ -101,12 +101,12 @@ export function calculateFinancialMonitor(log: FinancialMonitorInput): Financial
     openingCit: log.openingBalanceCit,
     openingAll,
     openingBalance,
-    openingNetworth: calculateNetworth(log.openingBalanceCit, log.openingStock),
+    openingNetworth: calculateNetworth(openingAll, openingBalance),
     turnover,
     payment,
     nonStockMargin,
     closingBalance,
-    closingNetworth: calculateNetworth(log.closingBalanceCit, log.closingStock),
+    closingNetworth: calculateNetworth(closingAll, closingBalance),
     closingStock: log.closingStock,
     closingCit: log.closingBalanceCit,
     closingAll,
