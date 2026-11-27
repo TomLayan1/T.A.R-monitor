@@ -34,7 +34,7 @@ export function SidebarContent({ items, subtitle, onNavigate }: ContentProps) {
           <Fuel className="h-6 w-6" aria-hidden />
         </div>
         <div className="leading-tight">
-          <p className="text-sm font-semibold">RMA Weekly</p>
+          <p className="text-sm font-semibold mb-2">Retail Financial Monitor</p>
           <p className="text-xs text-white/80">{subtitle}</p>
         </div>
       </div>
