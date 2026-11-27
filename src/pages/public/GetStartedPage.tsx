@@ -17,7 +17,7 @@ const options: Option[] = [
   {
     icon: LogIn,
     title: 'Sign In',
-    text: 'RMAs, Branch Managers, Head of Retail, Risk and Management sign in here to reach their portal.',
+    text: 'RMAs, Business Managers, Head of Retail, Risk and Management sign in here to reach their portal.',
     cta: 'Sign In',
     to: SIGN_IN_PATH,
     iconClass: 'bg-pub-yellow text-pub-forest',

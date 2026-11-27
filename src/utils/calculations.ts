@@ -1,4 +1,4 @@
-import type { FinancialMonitorFigures } from '../types/monthly-log';
+import { DEFAULT_SECURITY_BALANCE, type FinancialMonitorFigures } from '../types/monthly-log';
 import type { Station } from '../types/station';
 import type { WeeklyLog } from '../types/weekly-log';
 
@@ -57,29 +57,60 @@ export const isPositiveTar = (tar: number): boolean => tar > 0;
  * FINANCIAL MONITOR (Account Monitoring, monthly)
  * ========================================================================================================= */
 
-/** Total Opening Stock = Opening Stock + Opening Balance */
-export const calculateTotalOpeningStock = (openingStock: number, openingBalanceCit: number): number => openingStock + openingBalanceCit;
-/** Total Closing Stock = Closing Stock + Closing Balance */
-export const calculateTotalClosingStock = (closingStock: number, closingBalanceCit: number): number => closingStock + closingBalanceCit;
+/** Opening/Closing All = Stock + C.I.T */
+export const calculateAll = (stock: number, cit: number): number => stock + cit;
+/** Networth = C.I.T - Stock */
+export const calculateNetworth = (cit: number, stock: number): number => cit - stock;
+/** Closing Balance = Opening Balance + Turnover - Payment - Non-stock margin */
+export const calculateClosingBalance = (openingBalance: number, turnover: number, payment: number, nonStockMargin: number): number =>
+  openingBalance + turnover - payment - nonStockMargin;
 /** Change in Balance = Closing Balance - Opening Balance */
-export const calculateChangeInBalance = (closingBalanceCit: number, openingBalanceCit: number): number => closingBalanceCit - openingBalanceCit;
-/** Change in Stock = Total Closing Stock - Total Opening Stock */
-export const calculateChangeInStock = (totalClosingStock: number, totalOpeningStock: number): number => totalClosingStock - totalOpeningStock;
+export const calculateChangeInBalance = (closingBalance: number, openingBalance: number): number => closingBalance - openingBalance;
+/** Change in Stock = Closing All - Opening All */
+export const calculateChangeInStock = (closingAll: number, openingAll: number): number => closingAll - openingAll;
 /** Net Effect = Change in Stock - Change in Balance */
 export const calculateNetEffect = (changeInStock: number, changeInBalance: number): number => changeInStock - changeInBalance;
 
-export function calculateFinancialMonitor(log: { openingStock: number; openingBalanceCit: number; closingStock: number; closingBalanceCit: number }): FinancialMonitorFigures {
-  const totalOpeningStock = calculateTotalOpeningStock(log.openingStock, log.openingBalanceCit);
-  const totalClosingStock = calculateTotalClosingStock(log.closingStock, log.closingBalanceCit);
-  const changeInBalance = calculateChangeInBalance(log.closingBalanceCit, log.openingBalanceCit);
-  const changeInStock = calculateChangeInStock(totalClosingStock, totalOpeningStock);
+export interface FinancialMonitorInput {
+  openingStock: number;
+  openingBalanceCit: number;
+  closingStock: number;
+  closingBalanceCit: number;
+  openingBalance?: number | null;
+  turnover?: number | null;
+  payment?: number | null;
+  nonStockMargin?: number | null;
+  securityBalance?: number | null;
+}
+
+const num = (v: number | null | undefined): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+
+export function calculateFinancialMonitor(log: FinancialMonitorInput): FinancialMonitorFigures {
+  const openingBalance = num(log.openingBalance);
+  const turnover = num(log.turnover);
+  const payment = num(log.payment);
+  const nonStockMargin = num(log.nonStockMargin);
+  const openingAll = calculateAll(log.openingStock, log.openingBalanceCit);
+  const closingAll = calculateAll(log.closingStock, log.closingBalanceCit);
+  // Closing Balance is always recalculated from its parts so the screen, export and carry-forward agree.
+  const closingBalance = calculateClosingBalance(openingBalance, turnover, payment, nonStockMargin);
+  const changeInBalance = calculateChangeInBalance(closingBalance, openingBalance);
+  const changeInStock = calculateChangeInStock(closingAll, openingAll);
   return {
     openingStock: log.openingStock,
-    openingBalanceCit: log.openingBalanceCit,
-    totalOpeningStock,
+    openingCit: log.openingBalanceCit,
+    openingAll,
+    openingBalance,
+    openingNetworth: calculateNetworth(log.openingBalanceCit, log.openingStock),
+    turnover,
+    payment,
+    nonStockMargin,
+    closingBalance,
+    closingNetworth: calculateNetworth(log.closingBalanceCit, log.closingStock),
     closingStock: log.closingStock,
-    closingBalanceCit: log.closingBalanceCit,
-    totalClosingStock,
+    closingCit: log.closingBalanceCit,
+    closingAll,
+    securityBalance: typeof log.securityBalance === 'number' && Number.isFinite(log.securityBalance) ? log.securityBalance : DEFAULT_SECURITY_BALANCE,
     changeInBalance,
     changeInStock,
     netEffect: calculateNetEffect(changeInStock, changeInBalance),

@@ -14,7 +14,7 @@ import { SubmissionPerformanceChart } from './SubmissionPerformanceChart';
 
 /**
  * Stakeholder dashboard. Every figure is computed from the user's SCOPE (Head of Retail / Risk / Management:
- * all stations; Branch Manager: only assigned stations and RMAs) using each station's latest report.
+ * all stations; Business Manager: only assigned stations and RMAs) using each station's latest report.
  */
 export function ManagementDashboard() {
   const { user, stations, rmas, currentReports, now } = useScopedData();

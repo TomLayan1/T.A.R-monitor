@@ -21,6 +21,10 @@ let seed = 20261126;
 const rand = () => ((seed = (seed * 1664525 + 1013904223) % 4294967296), seed / 4294967296);
 const between = (a: number, b: number) => a + rand() * (b - a);
 const r10k = (n: number) => Math.round(n / 10_000) * 10_000;
+// Separate generator for the monthly account-balance figures so the other seed values stay exactly as they were.
+let balanceSeed = 20261127;
+const balanceRand = () => ((balanceSeed = (balanceSeed * 1664525 + 1013904223) % 4294967296), balanceSeed / 4294967296);
+const balanceBetween = (a: number, b: number) => a + balanceRand() * (b - a);
 
 const stations = read<Station[]>('stations.json');
 const byId = new Map(stations.map((s) => [s.id, s]));
@@ -45,7 +49,7 @@ let n = 1;
 for (const st of stations) {
   if (!st.rmaId || st.stationCode === null || st.creditLimit === null) continue;
   if (st.id === 'station-010') continue; // no history: the RMA can demo a station's FIRST monthly log (opens at ₦0)
-  let prev: { id: string; month: string; closingStock: number; closingBalanceCit: number } | null = null;
+  let prev: { id: string; month: string; closingStock: number; closingBalanceCit: number; closingBalance: number } | null = null;
   for (const month of months) {
     if (st.id === 'station-005' && month === '2026-09') continue; // skipped month: October carries forward from August
     if (st.id === 'station-019' && month === '2026-10') continue; // October not logged yet
@@ -55,6 +59,12 @@ for (const st of stations) {
     if (st.id === 'station-003' && month === '2026-09') closingStock = openingStock; // with an equal balance: zero Net Effect example
     let closingBalanceCit = r10k(between(300_000, 4_000_000));
     if (st.id === 'station-003' && month === '2026-09') closingBalanceCit = openingBalanceCit;
+    // Account balance: Closing Balance = Opening Balance + Turnover - Payment - Non-stock margin.
+    const openingBalance = prev?.closingBalance ?? 0;
+    const turnover = r10k(balanceBetween(18_000_000, 65_000_000));
+    const payment = r10k(turnover * balanceBetween(0.88, 1.06));
+    const nonStockMargin = balanceBetween(0, 1) < 0.6 ? 0 : r10k(balanceBetween(50_000, 600_000));
+    const closingBalance = openingBalance + turnover - payment - nonStockMargin;
     const id = `mlog-${String(n++).padStart(4, '0')}`;
     const [y, m] = month.split('-').map(Number);
     const next = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
@@ -68,6 +78,12 @@ for (const st of stations) {
       openingBalanceCit,
       closingStock,
       closingBalanceCit,
+      openingBalance,
+      turnover,
+      payment,
+      nonStockMargin,
+      closingBalance,
+      securityBalance: 10_000_000,
       openingSource: prev ? 'carried-forward' : 'first-log',
       carriedFromLogId: prev?.id ?? null,
       carriedFromMonth: prev?.month ?? null,
@@ -76,7 +92,7 @@ for (const st of stations) {
       submittedAt: `${next}-0${1 + Math.floor(between(0, 4))}T${String(8 + Math.floor(between(0, 9))).padStart(2, '0')}:${String(Math.floor(between(0, 59))).padStart(2, '0')}:00.000Z`,
       comments: null,
     });
-    prev = { id, month, closingStock, closingBalanceCit };
+    prev = { id, month, closingStock, closingBalanceCit, closingBalance };
   }
 }
 write('monthly-logs.json', monthly);

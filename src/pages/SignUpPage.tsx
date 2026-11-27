@@ -38,7 +38,7 @@ function validate(f: FormState): Errors {
   else if (!EMAIL_RE.test(f.email.trim())) e.email = 'Enter a valid email address.';
   if (!f.accountType) e.accountType = 'Select an account type.';
   if (f.accountType === 'RMA') {
-    if (!f.bmId) e.bmId = 'Select your Branch Manager.';
+    if (!f.bmId) e.bmId = 'Select your Business Manager.';
     if (!f.region) e.region = 'Select your region.';
   }
   if (f.accountType === 'Stakeholder' && !f.department) e.department = 'Select your department.';
@@ -122,7 +122,7 @@ export function SignUpPage() {
 
         {form.accountType === 'RMA' && (
           <div className="space-y-4 rounded-xl border border-brand/20 bg-brand-light/50 p-4">
-            <Select label="Branch Manager (BM)" value={form.bmId} onChange={(e) => set('bmId', e.target.value)} error={errors.bmId} required>
+            <Select label="Business Manager (BM)" value={form.bmId} onChange={(e) => set('bmId', e.target.value)} error={errors.bmId} required>
               <option value="">{bms.length === 0 ? 'No registered BMs yet' : 'Select your BM'}</option>
               {bms.map((b) => (
                 <option key={b.id} value={b.id}>{fullName(b)}</option>

@@ -11,7 +11,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const demoAccounts = [
   { label: 'RMA', email: 'rma@demo.com' },
-  { label: 'Branch Manager', email: 'olumide.adeyemi@demo.com' },
+  { label: 'Business Manager', email: 'olumide.adeyemi@demo.com' },
   { label: 'Head of Retail', email: 'headofretail@demo.com' },
   { label: 'Risk', email: 'risk@demo.com' },
   { label: 'Management', email: 'management@demo.com' },

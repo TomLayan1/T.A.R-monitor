@@ -17,12 +17,25 @@ test('Available Credit is null when no credit limit is on file', () => {
 });
 
 test('Financial Monitor worked example', () => {
-  const f = calculateFinancialMonitor({ openingStock: 2_000_000, openingBalanceCit: 600_000, closingStock: 3_000_000, closingBalanceCit: 500_000 });
-  assert.equal(f.totalOpeningStock, 2_600_000);
-  assert.equal(f.totalClosingStock, 3_500_000);
-  assert.equal(f.changeInBalance, -100_000);
+  const f = calculateFinancialMonitor({
+    openingStock: 2_000_000, openingBalanceCit: 600_000, closingStock: 3_000_000, closingBalanceCit: 500_000,
+    openingBalance: 1_000_000, turnover: 4_000_000, payment: 3_500_000, nonStockMargin: 100_000,
+  });
+  assert.equal(f.openingAll, 2_600_000);
+  assert.equal(f.closingAll, 3_500_000);
+  assert.equal(f.openingNetworth, -1_400_000);
+  assert.equal(f.closingNetworth, -2_500_000);
+  assert.equal(f.closingBalance, 1_400_000);
+  assert.equal(f.changeInBalance, 400_000);
   assert.equal(f.changeInStock, 900_000);
-  assert.equal(f.netEffect, 1_000_000);
+  assert.equal(f.netEffect, 500_000);
+  assert.equal(f.securityBalance, 10_000_000);
+});
+
+test('Non-stock margin left blank counts as 0', () => {
+  const f = calculateFinancialMonitor({ openingStock: 0, openingBalanceCit: 0, closingStock: 0, closingBalanceCit: 0, openingBalance: 0, turnover: 5, payment: 2 });
+  assert.equal(f.nonStockMargin, 0);
+  assert.equal(f.closingBalance, 3);
 });
 
 test('Net Effect colours: positive is red, negative is green, zero is neutral', async () => {

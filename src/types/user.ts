@@ -2,15 +2,15 @@
 export type Role = 'RMA' | 'BM' | 'Head of Retail' | 'Risk' | 'Management';
 export type AccountType = 'RMA' | 'Stakeholder';
 
-/** Stakeholder departments offered at sign-up. Branch Manager is a stakeholder department, not an account type. */
+/** Stakeholder departments offered at sign-up. Business Manager is a stakeholder department, not an account type. */
 export const STAKEHOLDER_DEPARTMENTS: Array<{ value: Exclude<Role, 'RMA'>; label: string }> = [
   { value: 'Head of Retail', label: 'Head of Retail' },
-  { value: 'BM', label: 'Branch Manager (BM)' },
+  { value: 'BM', label: 'Business Manager (BM)' },
   { value: 'Risk', label: 'Risk' },
   { value: 'Management', label: 'Management' },
 ];
 
-export const roleLabel = (role: Role): string => (role === 'BM' ? 'Branch Manager' : role);
+export const roleLabel = (role: Role): string => (role === 'BM' ? 'Business Manager' : role);
 export const accountTypeFor = (role: Role): AccountType => (role === 'RMA' ? 'RMA' : 'Stakeholder');
 
 export interface SessionUser {

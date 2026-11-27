@@ -37,5 +37,5 @@ export function ManagementLayout() {
     ],
     [unreadCount, isRisk],
   );
-  return <PortalLayout items={items} subtitle={user?.role === 'BM' ? 'Branch Manager Portal' : 'Stakeholder Portal'} getTitle={titleFor} />;
+  return <PortalLayout items={items} subtitle={user?.role === 'BM' ? 'Business Manager Portal' : 'Stakeholder Portal'} getTitle={titleFor} />;
 }

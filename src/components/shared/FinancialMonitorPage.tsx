@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useScopedData } from '../../hooks/useScopedData';
 import { exportFinancialMonitorWorkbook } from '../../services/excel.service';
 import { buildFinancialMonitorRows } from '../../services/monthly-log.service';
+import type { FinancialMonitorFigures } from '../../types/monthly-log';
 import { stationCodeLabel } from '../../types/station';
 import { formatNaira } from '../../utils/currency';
 import { formatMonth } from '../../utils/date';
@@ -21,19 +22,26 @@ import { NetEffectValue } from './NetEffectValue';
 
 const PAGE_SIZE = 10;
 const th = 'whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500';
-const HEADERS = [
-  'Station Code',
-  'Station Name',
-  'Opening Stock',
-  'Opening Balance',
-  'Total Opening Stock',
-  'Closing Stock',
-  'Closing Balance',
-  'Total Closing Stock',
-  'Change in Balance',
-  'Change in Stock',
-  'Net Effect',
+/** Column order for the Financial Monitor. Values are calculated from the monthly logs; formulas are never shown. */
+const COLUMNS: Array<{ header: string; value: (f: FinancialMonitorFigures) => number }> = [
+  { header: 'Opening Stock', value: (f) => f.openingStock },
+  { header: 'Opening C.I.T', value: (f) => f.openingCit },
+  { header: 'Opening All', value: (f) => f.openingAll },
+  { header: 'Opening Balance', value: (f) => f.openingBalance },
+  { header: 'Opening Networth', value: (f) => f.openingNetworth },
+  { header: 'Turnover', value: (f) => f.turnover },
+  { header: 'Payment', value: (f) => f.payment },
+  { header: 'NSM', value: (f) => f.nonStockMargin },
+  { header: 'Closing Balance', value: (f) => f.closingBalance },
+  { header: 'Closing Networth', value: (f) => f.closingNetworth },
+  { header: 'Closing Stock', value: (f) => f.closingStock },
+  { header: 'Closing C.I.T', value: (f) => f.closingCit },
+  { header: 'Closing All', value: (f) => f.closingAll },
+  { header: 'Security Balance', value: (f) => f.securityBalance },
+  { header: 'Change in Balance', value: (f) => f.changeInBalance },
+  { header: 'Change in Stock', value: (f) => f.changeInStock },
 ];
+const HEADERS = ['Station Code', 'Station Name', ...COLUMNS.map((c) => c.header), 'Net Effect'];
 
 type NetFilter = 'all' | NetEffectLevel | 'missing';
 type Sort = 'code' | 'net-desc' | 'net-asc';
@@ -158,7 +166,7 @@ export function FinancialMonitorPage() {
           <EmptyState icon={SearchX} title="No stations match your filters" description="Try clearing the search or a filter." />
         ) : (
           <div className="relative overflow-x-auto">
-            <table className="w-full min-w-[1650px] divide-y divide-slate-200">
+            <table className="w-full min-w-[2600px] divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
                   {HEADERS.map((h, i) => (
@@ -178,13 +186,13 @@ export function FinancialMonitorPage() {
                     </td>
                     {f ? (
                       <>
-                        {[f.openingStock, f.openingBalanceCit, f.totalOpeningStock, f.closingStock, f.closingBalanceCit, f.totalClosingStock, f.changeInBalance, f.changeInStock].map((v, i) => (
-                          <td key={i} className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNaira(v)}</td>
+                        {COLUMNS.map((c) => (
+                          <td key={c.header} className="whitespace-nowrap px-4 py-3 text-right text-sm text-slate-700">{formatNaira(c.value(f))}</td>
                         ))}
                         <td className="whitespace-nowrap px-4 py-3 text-right text-sm"><NetEffectValue value={f.netEffect} /></td>
                       </>
                     ) : (
-                      <td colSpan={9} className="whitespace-nowrap px-4 py-3 text-left text-sm text-slate-400">
+                      <td colSpan={COLUMNS.length + 1} className="whitespace-nowrap px-4 py-3 text-left text-sm text-slate-400">
                         {month === 'latest' ? 'No monthly log submitted' : `No log for ${formatMonth(month)}`}
                       </td>
                     )}

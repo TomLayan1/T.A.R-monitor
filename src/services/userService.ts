@@ -16,7 +16,7 @@ export const toSession = ({ password: _password, ...user }: StoredUser): Session
 export const getStoredUsers = (): StoredUser[] => readCollection<StoredUser>(KEYS.users);
 export const getSessionUsers = (): SessionUser[] => getStoredUsers().map(toSession);
 
-/** Registered BM users (stakeholder department "Branch Manager"). */
+/** Registered BM users (stakeholder department "Business Manager"). */
 export const listBmOptions = (): Array<{ id: string; name: string }> =>
   getStoredUsers()
     .filter((u) => u.role === 'BM')
@@ -58,7 +58,7 @@ export async function registerUser(input: RegisterInput): Promise<SessionUser> {
   const userId = newId('user');
   let claimed: string[] = [];
   if (role === 'RMA') {
-    if (!input.bmId || !users.some((u) => u.id === input.bmId && u.role === 'BM')) throw new Error('Select a registered Branch Manager.');
+    if (!input.bmId || !users.some((u) => u.id === input.bmId && u.role === 'BM')) throw new Error('Select a registered Business Manager.');
     if (!input.region || !listRegions().includes(input.region)) throw new Error('Select a valid region.');
     const stations = readCollection<Station>(KEYS.stations);
     for (const id of input.stationIds) {

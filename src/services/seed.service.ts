@@ -14,7 +14,7 @@ import { getNow } from './clock.service';
 import { maybeAlertPositiveTar } from './notification.service';
 import { KEYS, batch, readJSON, writeJSON } from './storage';
 
-const SEED_VERSION = '2026-11-v6-entered-trade-balance';
+const SEED_VERSION = '2026-11-v7-monthly-turnover-payment';
 
 /** Copies the JSON demo data into the shared store ONCE. Imported JSON is never mutated. */
 export function ensureSeeded(): void {
@@ -84,6 +84,24 @@ export function ensureSeeded(): void {
     }
 
     migrateWeeklyStructure();
+
+    // Monthly logs: Turnover, Payment, Non-stock margin and the account balance were added. Untouched demo logs
+    // (same id and closing values as the seed) get the new seed figures; logs an RMA entered keep their values and
+    // read the new fields as 0 (see normalizeMonthlyLog).
+    const storedMonthly = readJSON<MonthlyLog[]>(KEYS.monthlyLogs);
+    if (storedMonthly) {
+      const seedLogs = new Map((monthlyLogsJson as MonthlyLog[]).map((l) => [l.id, l]));
+      writeJSON(
+        KEYS.monthlyLogs,
+        storedMonthly.map((l) => {
+          const fresh = seedLogs.get(l.id);
+          const untouched = fresh && fresh.stationId === l.stationId && fresh.reportingMonth === l.reportingMonth
+            && fresh.closingStock === l.closingStock && fresh.closingBalanceCit === l.closingBalanceCit && l.turnover === undefined;
+          return untouched ? { ...fresh } : l;
+        }),
+        false,
+      );
+    }
 
     // Starter alerts: the latest seeded report per station that has a positive T.A.R (history, deduplicated per report).
     const stations = stationsJson as Station[];

@@ -147,11 +147,19 @@ const FM_HEADERS = [
   'STATION CODE',
   'STATION NAME',
   'OPENING STOCK',
+  'OPENING C.I.T',
+  'OPENING ALL',
   'OPENING BALANCE',
-  'TOTAL OPENING STOCK',
-  'CLOSING STOCK',
+  'OPENING NETWORTH',
+  'TURNOVER',
+  'PAYMENT',
+  'NSM',
   'CLOSING BALANCE',
-  'TOTAL CLOSING STOCK',
+  'CLOSING NETWORTH',
+  'CLOSING STOCK',
+  'CLOSING C.I.T',
+  'CLOSING ALL',
+  'SECURITY BALANCE',
   'CHANGE IN BALANCE',
   'CHANGE IN STOCK',
   'NET EFFECT',
@@ -182,8 +190,12 @@ export async function exportFinancialMonitorWorkbook(actorId: string, month: str
   for (const { station, log } of rows) {
     const f = log ? calculateFinancialMonitor(log as MonthlyLog) : null;
     const nums = f
-      ? [f.openingStock, f.openingBalanceCit, f.totalOpeningStock, f.closingStock, f.closingBalanceCit, f.totalClosingStock, f.changeInBalance, f.changeInStock, f.netEffect]
-      : new Array<string>(9).fill('NO MONTHLY LOG');
+      ? [
+          f.openingStock, f.openingCit, f.openingAll, f.openingBalance, f.openingNetworth, f.turnover, f.payment, f.nonStockMargin,
+          f.closingBalance, f.closingNetworth, f.closingStock, f.closingCit, f.closingAll, f.securityBalance,
+          f.changeInBalance, f.changeInStock, f.netEffect,
+        ]
+      : new Array<string>(17).fill('NO MONTHLY LOG');
     const row = ws.addRow([station.stationCode ?? 'PENDING', station.stationName, ...nums, log ? formatMonth(log.reportingMonth) : '—']);
     nums.forEach((v, i) => {
       const cell = row.getCell(3 + i);
@@ -193,10 +205,10 @@ export async function exportFinancialMonitorWorkbook(actorId: string, month: str
   }
   const last = rows.length + 1;
   ws.addConditionalFormatting({
-    ref: `K2:K${last}`,
+    ref: `S2:S${last}`,
     rules: [
-      { type: 'expression', priority: 1, formulae: ['AND(ISNUMBER(K2),K2>0)'], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFFFC7CE' } } } },
-      { type: 'expression', priority: 2, formulae: ['AND(ISNUMBER(K2),K2<0)'], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFC6EFCE' } } } },
+      { type: 'expression', priority: 1, formulae: ['AND(ISNUMBER(S2),S2>0)'], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFFFC7CE' } } } },
+      { type: 'expression', priority: 2, formulae: ['AND(ISNUMBER(S2),S2<0)'], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: 'FFC6EFCE' } } } },
     ],
   });
   const filename = `Financial_Monitor_${month === 'latest' ? 'Latest' : month}.xlsx`;

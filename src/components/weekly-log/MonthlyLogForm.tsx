@@ -19,11 +19,21 @@ function validateAmount(raw: string, label: string): string | undefined {
   return undefined;
 }
 
+/** Optional amount: blank is allowed (treated as 0). */
+function validateOptionalAmount(raw: string, label: string): string | undefined {
+  const parsed = parseAmount(raw);
+  if (parsed.kind === 'empty') return undefined;
+  if (parsed.kind === 'invalid') return `${label} must be a valid number.`;
+  if (parsed.value < 0) return `${label} cannot be negative.`;
+  return undefined;
+}
+
 // const th = 'whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500';
 
 /**
- * Account Monitoring monthly log. The RMA enters only the closing values; the opening values are carried forward
- * from the station's most recent earlier monthly log (₦0 for the first log), shown read-only, and stored with the log.
+ * Account Monitoring monthly log. The RMA enters the closing stock and C.I.T plus the month's Turnover, Payment and
+ * (optional) Non-stock margin. Opening values are carried forward from the station's most recent earlier monthly log
+ * (₦0 for the first log), shown read-only, and stored with the log.
  */
 export function MonthlyLogForm({ station }: { station: Station }) {
   const { user } = useAuth();
@@ -47,6 +57,9 @@ export function MonthlyLogForm({ station }: { station: Station }) {
 
   const [closingStock, setClosingStock] = useState('');
   const [closingBalance, setClosingBalance] = useState('');
+  const [turnover, setTurnover] = useState('');
+  const [payment, setPayment] = useState('');
+  const [nonStockMargin, setNonStockMargin] = useState('');
   const [comments, setComments] = useState('');
   const [showErrors, setShowErrors] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -54,10 +67,16 @@ export function MonthlyLogForm({ station }: { station: Station }) {
   const opening = month ? openingFor(station.id, month) : null;
   const errors = {
     closingStock: validateAmount(closingStock, 'Closing Stock'),
-    closingBalance: validateAmount(closingBalance, 'Closing Balance'),
+    closingBalance: validateAmount(closingBalance, 'Closing C.I.T'),
+    turnover: validateAmount(turnover, 'Turnover'),
+    payment: validateAmount(payment, 'Payment'),
+    nonStockMargin: validateOptionalAmount(nonStockMargin, 'Non-stock margin'),
   };
   const cs = parseAmount(closingStock);
   const cb = parseAmount(closingBalance);
+  const to = parseAmount(turnover);
+  const pa = parseAmount(payment);
+  const nsm = parseAmount(nonStockMargin);
   // const preview =
   //   opening && cs.kind === 'ok' && cb.kind === 'ok'
   //     ? calculateFinancialMonitor({ openingStock: opening.openingStock, openingBalanceCit: opening.openingBalanceCit, closingStock: cs.value, closingBalanceCit: cb.value })
@@ -67,13 +86,25 @@ export function MonthlyLogForm({ station }: { station: Station }) {
     e.preventDefault();
     if (!user || !isRma || !month) return;
     setShowErrors(true);
-    if (errors.closingStock || errors.closingBalance || cs.kind !== 'ok' || cb.kind !== 'ok') return;
+    if (Object.values(errors).some(Boolean) || cs.kind !== 'ok' || cb.kind !== 'ok' || to.kind !== 'ok' || pa.kind !== 'ok') return;
     setSubmitting(true);
     try {
-      await submit({ stationId: station.id, reportingMonth: month, closingStock: cs.value, closingBalanceCit: cb.value, comments });
+      await submit({
+        stationId: station.id,
+        reportingMonth: month,
+        closingStock: cs.value,
+        closingBalanceCit: cb.value,
+        turnover: to.value,
+        payment: pa.value,
+        nonStockMargin: nsm.kind === 'ok' ? nsm.value : 0,
+        comments,
+      });
       notify('success', `Monthly log submitted for ${station.stationName} (${formatMonth(month)}).`);
       setClosingStock('');
       setClosingBalance('');
+      setTurnover('');
+      setPayment('');
+      setNonStockMargin('');
       setComments('');
       setShowErrors(false);
     } catch (err) {
@@ -87,7 +118,7 @@ export function MonthlyLogForm({ station }: { station: Station }) {
     <div className="space-y-6">
       <form onSubmit={handleSubmit} noValidate className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h3 className="text-base font-semibold text-slate-900">Monthly account monitoring</h3>
-        <p className="mt-0.5 text-sm text-slate-500">Monthly station stock and cash balances. One log per station per month.</p>
+        <p className="mt-0.5 text-sm text-slate-500">Monthly station stock, cash and account balances. One log per station per month.</p>
 
         {!isRma && (
           <div className="mt-3 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
@@ -130,9 +161,17 @@ export function MonthlyLogForm({ station }: { station: Station }) {
               <Input label="Opening Stock" value={opening ? formatNaira(opening.openingStock) : ''} readOnly aria-readonly="true" hint="Previous month's Closing Stock (locked)" />
               <Input label="Closing Stock" required inputMode="decimal" adornment="₦" placeholder="0" value={closingStock} disabled={!isRma}
                 onChange={(e) => setClosingStock(e.target.value)} onBlur={() => setShowErrors(true)} error={showErrors ? errors.closingStock : undefined} />
-              <Input label="Opening Balance" value={opening ? formatNaira(opening.openingBalanceCit) : ''} readOnly aria-readonly="true" hint="Previous month's Closing Balance (locked)" />
-              <Input label="Closing Balance" required inputMode="decimal" adornment="₦" placeholder="0" value={closingBalance} disabled={!isRma}
+              <Input label="Opening C.I.T" value={opening ? formatNaira(opening.openingBalanceCit) : ''} readOnly aria-readonly="true" hint="Previous month's Closing C.I.T (locked)" />
+              <Input label="Closing C.I.T" required inputMode="decimal" adornment="₦" placeholder="0" value={closingBalance} disabled={!isRma}
                 onChange={(e) => setClosingBalance(e.target.value)} onBlur={() => setShowErrors(true)} error={showErrors ? errors.closingBalance : undefined} />
+              <Input label="Opening Balance" value={opening ? formatNaira(opening.openingBalance) : ''} readOnly aria-readonly="true" hint="Previous month's Closing Balance (locked)" />
+              <Input label="Turnover" required inputMode="decimal" adornment="₦" placeholder="0" value={turnover} disabled={!isRma}
+                onChange={(e) => setTurnover(e.target.value)} onBlur={() => setShowErrors(true)} error={showErrors ? errors.turnover : undefined} />
+              <Input label="Payment" required inputMode="decimal" adornment="₦" placeholder="0" value={payment} disabled={!isRma}
+                onChange={(e) => setPayment(e.target.value)} onBlur={() => setShowErrors(true)} error={showErrors ? errors.payment : undefined} />
+              <Input label="Non-stock margin" id="field-non-stock-margin" inputMode="decimal" adornment="₦" placeholder="0" value={nonStockMargin} disabled={!isRma}
+                onChange={(e) => setNonStockMargin(e.target.value)} onBlur={() => setShowErrors(true)} hint="If there is"
+                error={showErrors ? errors.nonStockMargin : undefined} />
             </div>
 
             {/* <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -216,3 +255,4 @@ export function MonthlyLogForm({ station }: { station: Station }) {
     </div>
   );
 }
+

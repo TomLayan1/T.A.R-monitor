@@ -38,7 +38,7 @@ An RMA typing a management URL is redirected to the RMA dashboard; a normal Mana
 
 ## Roles and permissions
 
-One sign-in and one sign-up serve everyone. Sign-up asks for an **Account Type**: *RMA* (then BM, Region, Station(s)) or *Stakeholder* (then Department: Head of Retail, Branch Manager (BM), Risk, Management). The stakeholder department becomes the user's role; Branch Manager is a stakeholder department, not an account type. After sign-in you land on the dashboard for your stored role: RMAs on `/rma/dashboard`, everyone else on `/management/dashboard`.
+One sign-in and one sign-up serve everyone. Sign-up asks for an **Account Type**: *RMA* (then BM, Region, Station(s)) or *Stakeholder* (then Department: Head of Retail, Business Manager (BM), Risk, Management). The stakeholder department becomes the user's role; Business Manager is a stakeholder department, not an account type. After sign-in you land on the dashboard for your stored role: RMAs on `/rma/dashboard`, everyone else on `/management/dashboard`.
 
 | Function | RMA | BM | Head of Retail | Risk | Management |
 |---|---|---|---|---|---|
@@ -63,7 +63,7 @@ The matrix lives in `src/utils/permissions.ts` and is enforced in the services (
 |---|---|---|
 | RMA | `rma@demo.com` | Adaeze Okafor (BM Olumide Adeyemi), owns STN-001 to STN-010 |
 | RMA | `tunde.bakare@demo.com`, `kelechi.nwankwo@demo.com`, `hauwa.garba@demo.com`, `segun.alabi@demo.com`, `ifeoma.obi@demo.com` | 2-3 stations each |
-| Branch Manager | `olumide.adeyemi@demo.com` (BM of `rma-001`, `rma-005`), `ngozi.nwosu@demo.com`, `emeka.obi@demo.com`, `fatima.bello@demo.com` | scoped to their own RMAs/stations |
+| Business Manager | `olumide.adeyemi@demo.com` (BM of `rma-001`, `rma-005`), `ngozi.nwosu@demo.com`, `emeka.obi@demo.com`, `fatima.bello@demo.com` | scoped to their own RMAs/stations |
 | Head of Retail | `headofretail@demo.com` | organisation-wide view; cannot approve |
 | Risk | `risk@demo.com` | organisation-wide view; **approves/rejects amendments** |
 | Management | `management@demo.com`, `chioma.eze@demo.com` | organisation-wide view; **nudges RMAs** |
@@ -76,7 +76,7 @@ Sessions are **per browser tab** (sessionStorage), so you can be an RMA in one t
 - **TAR = Available Stock - Trade Balance**, **Exposure = TAR - Available Stock + CIT**, **Available Credit = Trade Balance - Credit Limit** (see Calculations). Available Credit has no colour treatment.
 - **TAR classification** (`src/utils/tar-colours.ts`, `TarValue`): positive = **Debt**, red text on a very light red background; negative = green; exactly zero = neutral. Used in every table, modal, ranking and chart in both portals. There is no amount threshold.
 - **RMA portal**: the Stations button now reads **Create Log**; the weekly log form has an optional **Comments** field saved on the report and shown only in the *View* modal (not a table column); the Weekly Logs table no longer shows the RMA name (the RMA id/name stay on the record for audit and performance); new **Reports** tab (filter by station and period, historical table, Excel download, own stations only).
-- **Stakeholder portal**: Stations has **pagination (10 per page)** that works with search, filters and sorting and returns to page 1 when they change; clicking **Outstanding Stations** (dashboard KPI or R.M.A Performance card) opens a station-level detail view (Station Code, Name, Region, Assigned RMA, Assigned BM, Reporting Week, Submission Status) listing only stations without a submitted report for the chosen week; the **Branch Manager** dashboard shows Total Assigned Stations, Total Assigned RMAs, Positive TAR Stations, Outstanding Reports, Completed Reports, Submission Performance, Trade Balance, Available Stock, CIT, TAR and Exposure for the BM's scope only.
+- **Stakeholder portal**: Stations has **pagination (10 per page)** that works with search, filters and sorting and returns to page 1 when they change; clicking **Outstanding Stations** (dashboard KPI or R.M.A Performance card) opens a station-level detail view (Station Code, Name, Region, Assigned RMA, Assigned BM, Reporting Week, Submission Status) listing only stations without a submitted report for the chosen week; the **Business Manager** dashboard shows Total Assigned Stations, Total Assigned RMAs, Positive TAR Stations, Outstanding Reports, Completed Reports, Submission Performance, Trade Balance, Available Stock, CIT, TAR and Exposure for the BM's scope only.
 
 ## November 26 refinements
 
@@ -137,7 +137,7 @@ To swap in a real backend, replace the functions in `src/services/` (storage, st
 
 ## Stakeholder portal pages
 
-- **Dashboard**: org-wide for Head of Retail / Risk / Management (stations, credit limit, available credit, trade balance, available stock, CIT, total stock, TAR, exposure, positive TAR stations, outstanding stations) and BM-scoped for Branch Managers; TAR chart, Top stations by TAR, submission performance, credit utilisation, recent notifications. All from each station's latest report (never a sum of history).
+- **Dashboard**: org-wide for Head of Retail / Risk / Management (stations, credit limit, available credit, trade balance, available stock, CIT, total stock, TAR, exposure, positive TAR stations, outstanding stations) and BM-scoped for Business Managers; TAR chart, Top stations by TAR, submission performance, credit utilisation, recent notifications. All from each station's latest report (never a sum of history).
 - **Stations**: read-only table with search, RMA / BM / TAR-status filters, sort, pagination and per-station history (all versions + amendment trail).
 - **Reports**: same workspace as the RMA Reports tab, limited to the user's scope. Excel workbook: one worksheet per week named by the Sunday date (`YYYY-MM-DD`), oldest first; columns Station Code, Station Name, Credit Limit, Available Credit, Trade Balance, Available Stock, CIT, Total Stock, TAR, Exposure, RMA, BM; Naira formatting; bold header, frozen row, filters, SUBTOTAL totals; conditional formatting (positive TAR red, negative green); missing reports are marked NOT SUBMITTED, never copied from another week.
 - **Notifications**, **Outstanding Submissions** (by RMA; Nudge button for Management only) and **Outstanding Stations** (by station).
@@ -173,33 +173,44 @@ Available Stock, CIT, Total Stock, TAR, Exposure (then BM, Status, Action).
 ### Account Monitoring (monthly) and Financial Monitor
 
 Stations -> **Create Log** opens the Station Log page (name + code at the top) with two tabs: **Weekly Logs**
-(default) and **Monthly Log**. The RMA picks a reporting month and enters **Closing Stock** and **Closing Balance**.
-**Opening Stock** and **Opening Balance** are locked: they are copied separately from the same station's most recent
+(default) and **Monthly Log**. The RMA picks a reporting month and enters **Closing Stock**, **Closing C.I.T**,
+**Turnover**, **Payment** and, if there is one, **Non-stock margin** (left blank = 0). **Opening Stock**,
+**Opening C.I.T** and **Opening Balance** are locked: they are copied separately from the same station's most recent
 earlier monthly log (closing -> opening) and stored on the new log (`openingSource`, `carriedFromLogId`,
-`carriedFromMonth`). A station's first log opens at ₦0 / ₦0; if a month was skipped the most recent earlier log is used.
+`carriedFromMonth`). A station's first log opens at ₦0; if a month was skipped the most recent earlier log is used.
 One log per station per month; future months and back-filling before the station's latest log are refused (a back-fill
 would silently change the openings of later months). Openings are computed in `monthly-log.service.ts`, never accepted
 from the UI.
 
 ```
-Total Opening Stock = Opening Stock + Opening Balance
-Total Closing Stock = Closing Stock + Closing Balance
-Change in Balance   = Closing Balance - Opening Balance
-Change in Stock     = Total Closing Stock - Total Opening Stock
-Net Effect          = Change in Stock - Change in Balance   (red positive, green negative, grey zero)
+Opening All       = Opening Stock + Opening C.I.T   (= previous month's Closing All)
+Opening Networth  = Opening C.I.T - Opening Stock
+Closing Balance   = Opening Balance + Turnover - Payment - NSM
+Closing Networth  = Closing C.I.T - Closing Stock
+Closing All       = Closing Stock + Closing C.I.T
+Security Balance  = 10,000,000 (default)
+Change in Balance = Closing Balance - Opening Balance
+Change in Stock   = Closing All - Opening All
+Net Effect        = Change in Stock - Change in Balance   (red positive, green negative, grey zero)
 ```
 
-Worked example: OS 2,000,000, OB 600,000, CS 3,000,000, CB 500,000 -> TOS 2,600,000, TCS 3,500,000, Change in
-Balance -100,000, Change in Stock 900,000, Net Effect 1,000,000.
+Worked example: Opening Stock 2,000,000, Opening C.I.T 600,000, Closing Stock 3,000,000, Closing C.I.T 500,000,
+Opening Balance 1,000,000, Turnover 4,000,000, Payment 3,500,000, NSM 100,000 -> Opening All 2,600,000,
+Closing All 3,500,000, Closing Balance 1,400,000, Change in Balance 400,000, Change in Stock 900,000, Net Effect 500,000.
 
 **Financial Monitor** (sidebar, RMA and stakeholder portals, role-scoped like everything else) lists each station's
-latest monthly log or a chosen month with the columns Station Code, Station Name, Opening Stock, Opening Balance,
-Total Opening Stock, Closing Stock, Closing Balance, Total Closing Stock, Change in Balance, Change in Stock,
-Net Effect; search, month, Net Effect filter, sort, pagination and an Excel export (Net Effect cells: red
-positive, green negative). The page has no KPI cards. Stations without a log are shown
-as such, never filled in.
+latest monthly log or a chosen month with the columns Station Code, Station Name, Opening Stock, Opening C.I.T,
+Opening All, Opening Balance, Opening Networth, Turnover, Payment, NSM, Closing Balance, Closing Networth,
+Closing Stock, Closing C.I.T, Closing All, Security Balance, Change in Balance, Change in Stock, Net Effect.
+Formulas are not shown on screen. A submitted monthly log appears immediately (same tab and other open tabs).
+Search, month, Net Effect filter, sort, pagination and an Excel export (same columns; Net Effect cells: red positive,
+green negative). The page has no KPI cards. Stations without a log are shown as such, never filled in.
 
 ### Data migration
+
+`2026-11-v7-monthly-turnover-payment` adds Turnover, Payment, Non-stock margin, Opening/Closing Balance and
+Security Balance to monthly logs. Untouched demo logs take the new seed figures; logs an RMA already entered keep
+their values and read the new fields as 0.
 
 `SEED_VERSION` is `2026-11-v6-entered-trade-balance`. On first load after the update, existing LocalStorage weekly
 logs are converted: logs identical to the old seed are replaced by the new seed; anything the user created keeps its
@@ -252,7 +263,7 @@ Demo authentication only: passwords are plain text in LocalStorage and are not p
 
 The form has exactly five business fields: Station Name, Address, Region, Assigned RMA, BM, all required.
 
-- **Assigned RMA**: registered users with the RMA role (full name shown, user id stored). **BM**: registered users with the Branch Manager role (full name shown, id stored). Neither is hardcoded in the page.
+- **Assigned RMA**: registered users with the RMA role (full name shown, user id stored). **BM**: registered users with the Business Manager role (full name shown, id stored). Neither is hardcoded in the page.
 - Submitting runs `onboardStation()` (`src/services/stationOnboarding.service.ts`): validates, rejects a missing/non-RMA/unknown RMA or BM (no silent fallback), blocks duplicates (same name + address), generates a unique station id and writes ONE record to the shared `rma_system_stations` collection, an onboarding record to `rma_system_station_onboarding`, an audit entry and notifications to the assigned RMA and Management.
 - The station is linked through the **existing assignment field `rmaId`** (the RMA's list is `station.rmaId === loggedInUser.id`); the BM is stored in the new `bmId`. Both portals read the same record, so it appears immediately in the RMA's Stations tab (ready for its first weekly report) and in Management.
 - No report, exposure or stock is created. `stationCode` and `creditLimit` stay **null** (shown as "Pending" / "Not available") until S4HANA supplies them. Until a credit limit exists, Available Credit for that station's reports is null rather than guessed. Existing stations are untouched; `onboardedAt` and `onboardingStatus` (`Onboarded`) are recorded (existing stations are `Active`).
